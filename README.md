@@ -1,3 +1,13 @@
+<h1 align="center">
+  <code>p-vote</code>
+</h1>
+<p align="center">
+  <img width="400" alt="p-vote-logo" src="https://github.com/user-attachments/assets/7a81eefa-4ab4-4481-accf-c950b84bd7ff" />
+</p>
+<p align="center">
+  Exploitable USDC Voting Program
+</p>
+
 ## p-vote
 
 This is a simple usdc based solana voting contract(program) written in pinocchio(rust). It's meant be used as a model to create future program. As such it's designed to be exploitable by a flash loan program I"ll implement next.
