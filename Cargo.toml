@@ -1,0 +1,22 @@
+[package]
+name = "p-vote"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+bytemuck = { version = "1.23.1", features = ["derive"] }
+pinocchio = { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
+pinocchio-pubkey = { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
+pinocchio-system = { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
+pinocchio-log = { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
+pinocchio-token = { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
+pinocchio-associated-token-account =  { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
+shank = { version = "0.4.2" }
+solana-sdk = "2.3.1"
+
+[dev-dependencies]
+mollusk-svm = "0.4.0"
+mollusk-svm-bencher = "0.4.0"
