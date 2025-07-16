@@ -1,5 +1,7 @@
 #![no_std]
 #![allow(unexpected_cfgs)]
+// Allow unsafe mut for editing accounts from clippy
+#![allow(clippy::mut_from_ref)]
 
 use pinocchio::{
     ProgramResult, account_info::AccountInfo, entrypoint, program_error::ProgramError,

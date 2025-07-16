@@ -71,7 +71,7 @@ impl<'info> TryFrom<&'info [u8]> for InitializePlatformInstructionData {
     type Error = ProgramError;
 
     fn try_from(data: &'info [u8]) -> Result<Self, Self::Error> {
-        let result: &InitializePlatformInstructionData = bytemuck::try_from_bytes::<Self>(&data)
+        let result: &InitializePlatformInstructionData = bytemuck::try_from_bytes::<Self>(data)
             .map_err(|_| ProgramError::InvalidInstructionData)?;
 
         Ok(*result)

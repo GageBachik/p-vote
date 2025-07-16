@@ -4,7 +4,7 @@ use pinocchio::{
 };
 use shank::ShankAccount;
 
-pub const PLATFORM_SEED: &'static [u8; 6] = b"config";
+pub const PLATFORM_SEED: &[u8; 6] = b"config";
 
 #[repr(C)] //keeps the struct layout the same across different architectures
 #[derive(Clone, Copy, Pod, Zeroable, ShankAccount)]

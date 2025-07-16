@@ -8,7 +8,6 @@ use pinocchio::{
 };
 use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
-use pinocchio_system::instructions::Transfer;
 use shank::ShankType;
 
 use crate::{state::{Platform, PLATFORM_SEED}, PTokenProgramError,};
@@ -62,7 +61,7 @@ impl<'info> TryFrom<&'info [u8]> for UpdatePlatformInstructionData {
     type Error = ProgramError;
 
     fn try_from(data: &'info [u8]) -> Result<Self, Self::Error> {
-        let result: &UpdatePlatformInstructionData = bytemuck::try_from_bytes::<Self>(&data)
+        let result: &UpdatePlatformInstructionData = bytemuck::try_from_bytes::<Self>(data)
             .map_err(|_| ProgramError::InvalidInstructionData)?;
 
         Ok(*result)
