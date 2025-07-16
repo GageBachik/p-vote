@@ -8,7 +8,7 @@
   Exploitable USDC Voting Program
 </p>
 
-## p-vote
+## about
 
 This is a simple usdc based solana voting contract(program) written in pinocchio(rust). It's meant be used as a model to create future program. As such it's designed to be exploitable by a flash loan program I"ll implement next.
 
