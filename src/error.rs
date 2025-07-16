@@ -5,6 +5,8 @@ use shank::ShankType;
 pub enum PTokenProgramError {
     // Invalid instruction discriminator
     InvalidDiscriminator = 6001,
+    PlatformKeyIncorrect = 6002,
+    VaultKeyIncorrect = 6003,
 }
 
 impl From<PTokenProgramError> for ProgramError {

@@ -1892,6 +1892,7 @@ dependencies = [
 name = "p-vote"
 version = "0.1.0"
 dependencies = [
+ "bs58",
  "bytemuck",
  "mollusk-svm",
  "mollusk-svm-bencher",

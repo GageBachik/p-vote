@@ -10,7 +10,8 @@ pub struct Platform {
     pub authority: Pubkey,
     // u16 -> pod cant convert between types. keep it u8
     pub fee: [u8; 2],
-    pub bump: u8
+    pub platform_bump: u8,
+    pub vault_bump: u8,
 }
 
 impl Platform {

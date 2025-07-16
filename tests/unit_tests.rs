@@ -1,5 +1,6 @@
 use mollusk_svm::result::{Check, ProgramResult};
 use mollusk_svm::{program, Mollusk};
+use p_vote::state::Platform;
 use solana_sdk::account::Account;
 use solana_sdk::instruction::{AccountMeta, Instruction};
 use solana_sdk::native_token::LAMPORTS_PER_SOL;
@@ -36,16 +37,22 @@ fn test_initialize_platform() {
     //system program and system account
     let (system_program, system_account) = program::keyed_account_for_system_program();
 
+    println!("authority: {:?}", AUTHORITY);
+
     // Create the Platform PDA
     let (platform_pda, platform_bump) =
-        Pubkey::find_program_address(&[PLATFORM_SEED, &AUTHORITY.to_bytes()], &PROGRAM);
+        Pubkey::find_program_address(&[PLATFORM_SEED], &PROGRAM);
+    println!("platform: {:?}", platform_pda);
+
     // Create the vault PDA
-    let (vault_pda, _vault_bump) =
+    let (vault_pda, vault_bump) =
     Pubkey::find_program_address(&[platform_pda.to_bytes().as_ref()], &PROGRAM);
+    println!("vault: {:?}", vault_pda);
 
     //Initialize the accounts
     let authority_account = Account::new(1 * LAMPORTS_PER_SOL, 0, &system_program);
     let platform_account = Account::new(0, 0, &system_program);
+    let vault_account = Account::new(0, 0, &system_program);
     let min_balance = mollusk.sysvars.rent.minimum_balance(Rent::size_of());
     let mut rent_account = Account::new(min_balance, Rent::size_of(), &RENT);
     rent_account.data = get_rent_data();
@@ -55,14 +62,15 @@ fn test_initialize_platform() {
         AccountMeta::new(AUTHORITY, true),
         AccountMeta::new(platform_pda, false),
         AccountMeta::new(vault_pda, false),
-        // AccountMeta::new_readonly(RENT, false),
+        AccountMeta::new_readonly(RENT, false),
         AccountMeta::new_readonly(system_program, false),
     ];
 
     // Create the instruction data
     let ix_data = InitializePlatformInstructionData {
         fee: (500 as u16).to_le_bytes(),
-        bump: platform_bump
+        platform_bump: platform_bump,
+        vault_bump: vault_bump
     };
 
     // Bytemuck serialize the data
@@ -78,12 +86,21 @@ fn test_initialize_platform() {
     let tx_accounts = &vec![
         (AUTHORITY, authority_account.clone()),
         (platform_pda, platform_account.clone()),
+        (vault_pda, vault_account.clone()),
         (RENT, rent_account.clone()),
         (system_program, system_account.clone()),
     ];
 
-    let init_res =
-        mollusk.process_and_validate_instruction(&instruction, tx_accounts, &[Check::success()]);
+    let result = 
+                mollusk.process_and_validate_instruction(&instruction, tx_accounts, &[Check::success()]);
+    
+    let updated_data = result.get_account(&platform_pda).unwrap();
+    let parsed_data = bytemuck::from_bytes::<Platform>(&updated_data.data);
 
-    assert!(init_res.program_result == ProgramResult::Success);
+    println!("Platform authority: {:?}",  bs58::encode(parsed_data.authority).into_string());
+    println!("Platform fee: {:?}", u16::from_le_bytes(parsed_data.fee));
+    println!("Platform bump: {}", parsed_data.platform_bump);
+    println!("Vault bump: {}", parsed_data.vault_bump);
+
+    assert!(result.program_result == ProgramResult::Success);
 }
