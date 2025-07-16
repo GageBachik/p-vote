@@ -3,6 +3,10 @@ name = "p-vote"
 version = "0.1.0"
 edition = "2021"
 
+[[bench]]
+name = "compute_units"
+harness = false
+
 [lib]
 crate-type = ["cdylib", "lib"]
 

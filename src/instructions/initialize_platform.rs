@@ -6,14 +6,11 @@ use pinocchio::{
     program_error::ProgramError,
     sysvars::{Sysvar, rent::Rent},
 };
-use pinocchio_log::log;
-use pinocchio_pubkey::derive_address;
+
 use pinocchio_system::instructions::Transfer;
 use shank::ShankType;
 
-use crate::{state::Platform, PTokenProgramError};
-
-pub const PLATFORM_SEED: &'static [u8; 6] = b"config";
+use crate::state::{Platform, PLATFORM_SEED};
 
 #[repr(C)]
 pub struct InitializePlatformAccounts<'info> {

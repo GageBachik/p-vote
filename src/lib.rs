@@ -12,7 +12,7 @@ pub mod error;
 pub use instructions::*;
 pub use error::*;
 
-pinocchio_pubkey::declare_id!("7WUQVNp7SKkaK5KwTKGAcE9YiTyBjkgqFAJZ24k54u68");
+pinocchio_pubkey::declare_id!("2YwymitHUGW6vwk66cZpVoq5oGD31Ziz41UNokMBrKeY");
 
 entrypoint!(process_instruction);
 
@@ -28,6 +28,7 @@ fn process_instruction(
     // maybe update to enum for #[derive(ShankInstruction)]
     match instruction_data.split_first() {
         Some((0, data)) => InitializePlatform::try_from((accounts, data))?.process(),
+        Some((1, data)) => UpdatePlatform::try_from((accounts, data))?.process(),
         _ => Err(PTokenProgramError::InvalidDiscriminator.into()),
     }
 }

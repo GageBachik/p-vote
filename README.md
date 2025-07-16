@@ -5,3 +5,18 @@ This is a simple usdc based solana voting contract(program) written in pinocchio
 ## Stack
 
 We'll be using pinocchio for the solana program, mollusk for testing (unit and CU benching), surfpool.run for deployment and E2E testing, codama/shank for idl and client generation, and finally nextjs and solana kit for the front-end.
+
+## Commands
+
+Build Pinocchio Program
+```bash
+cargo build-sbf
+```
+Run Mollusk Tests
+```bash
+cargo test
+```
+Run Mollusk Bench
+```bash
+cargo bench
+```
