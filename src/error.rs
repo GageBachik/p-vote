@@ -7,6 +7,7 @@ pub enum PTokenProgramError {
     InvalidDiscriminator = 6001,
     PlatformKeyIncorrect = 6002,
     VaultKeyIncorrect = 6003,
+    VoteVaultKeyIncorrect = 6004,
 }
 
 impl From<PTokenProgramError> for ProgramError {

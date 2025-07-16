@@ -99,7 +99,9 @@ impl<'info> UpdatePlatform<'info> {
         // could do it in accounts but then we'd have to load it twice. one to view and one to mutate.
         // worth considering doing just to have all validations in the same place 
 
-        let platform_state = Platform::load(self.accounts.platform)?;
+
+        let mut platform = self.accounts.platform.clone();
+        let platform_state = Platform::load(&mut platform)?;
 
         if self.accounts.platform.key().ne(&derive_address(&[PLATFORM_SEED], Some(platform_state.platform_bump), &crate::ID)) {
             log!("self.accounts.platform key: {} | Derived: {}", self.accounts.platform.key(), &derive_address(&[PLATFORM_SEED], None, &crate::ID));

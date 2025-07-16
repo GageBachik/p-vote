@@ -121,7 +121,8 @@ impl<'info> InitializePlatform<'info> {
         .invoke_signed(&[signer_seeds])?;
 
         // Initialize config account.
-        let platform_state = Platform::load(self.accounts.platform)?;
+        let mut platform = self.accounts.platform.clone();
+        let platform_state = Platform::load(&mut platform)?;
 
         platform_state.authority = *self.accounts.authority.key();
         platform_state.fee = self.instruction_data.fee;

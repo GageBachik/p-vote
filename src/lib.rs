@@ -1,7 +1,5 @@
 #![no_std]
 #![allow(unexpected_cfgs)]
-// Allow unsafe mut for editing accounts from clippy
-#![allow(clippy::mut_from_ref)]
 
 use pinocchio::{
     ProgramResult, account_info::AccountInfo, entrypoint, program_error::ProgramError,
@@ -31,6 +29,10 @@ fn process_instruction(
     match instruction_data.split_first() {
         Some((0, data)) => InitializePlatform::try_from((accounts, data))?.process(),
         Some((1, data)) => UpdatePlatform::try_from((accounts, data))?.process(),
+        Some((1, data)) => InitializeVote::try_from((accounts, data))?.process(),
+        Some((1, data)) => InitializePosition::try_from((accounts, data))?.process(),
+        Some((1, data)) => UpdatePosition::try_from((accounts, data))?.process(),
+        Some((1, data)) => RedeemWinnings::try_from((accounts, data))?.process(),
         _ => Err(PTokenProgramError::InvalidDiscriminator.into()),
     }
 }

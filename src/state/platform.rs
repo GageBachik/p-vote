@@ -19,7 +19,7 @@ pub struct Platform {
 impl Platform {
     pub const LEN: usize = core::mem::size_of::<Self>();
 
-    pub fn load(platform_account: &AccountInfo) -> Result<&mut Self, ProgramError> {
+    pub fn load(platform_account: &mut AccountInfo) -> Result<&mut Self, ProgramError> {
         let data = unsafe { platform_account.borrow_mut_data_unchecked() };
         let platform_state = bytemuck::try_from_bytes_mut::<Platform>(data)
             .map_err(|_| ProgramError::InvalidAccountData)?;

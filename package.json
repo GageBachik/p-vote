@@ -5,8 +5,10 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build-sol": "cargo build-sbf",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint-sol": "cargo clippy"
   },
   "dependencies": {
     "@codama/renderers-js": "^1.3.0",
