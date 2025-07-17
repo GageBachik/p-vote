@@ -8,6 +8,7 @@ use pinocchio::{
 pub mod instructions;
 pub mod state;
 pub mod error;
+pub mod utils;
 
 pub use instructions::*;
 pub use error::*;
@@ -29,10 +30,10 @@ fn process_instruction(
     match instruction_data.split_first() {
         Some((0, data)) => InitializePlatform::try_from((accounts, data))?.process(),
         Some((1, data)) => UpdatePlatform::try_from((accounts, data))?.process(),
-        Some((1, data)) => InitializeVote::try_from((accounts, data))?.process(),
-        Some((1, data)) => InitializePosition::try_from((accounts, data))?.process(),
-        Some((1, data)) => UpdatePosition::try_from((accounts, data))?.process(),
-        Some((1, data)) => RedeemWinnings::try_from((accounts, data))?.process(),
+        Some((2, data)) => InitializeVote::try_from((accounts, data))?.process(),
+        Some((3, data)) => InitializePosition::try_from((accounts, data))?.process(),
+        Some((4, data)) => UpdatePosition::try_from((accounts, data))?.process(),
+        Some((5, data)) => RedeemWinnings::try_from((accounts, data))?.process(),
         _ => Err(PTokenProgramError::InvalidDiscriminator.into()),
     }
 }

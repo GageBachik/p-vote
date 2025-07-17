@@ -9,3 +9,7 @@
 // similiar to anchors concept of seperating: logics, validations, structs.
 
 // Which means all you'll find here is a reusable function for calculating fees <3
+
+pub fn calculate_fees(amount: u64, bps: u16) -> u64 {
+    amount * bps as u64 / 10_000
+}
