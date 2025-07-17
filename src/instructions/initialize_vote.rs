@@ -1,13 +1,12 @@
 use bytemuck::{Pod, Zeroable};
 use pinocchio::{
-    account_info::AccountInfo, instruction::{Seed, Signer}, program_error::ProgramError, pubkey, sysvars::{rent::Rent, Sysvar}, ProgramResult
+    account_info::AccountInfo, program_error::ProgramError, pubkey, sysvars::{rent::Rent, Sysvar}, ProgramResult
 };
 
-use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
 use pinocchio_system::instructions::Transfer;
 use pinocchio::sysvars::clock::Clock;
-use pinocchio_token::{instructions::{InitializeAccount3, InitializeMint2}, state::TokenAccount};
+use pinocchio_token::{instructions::{InitializeAccount3}, state::TokenAccount};
 use shank::ShankType;
 
 use crate::{state::{Platform, Vote, PLATFORM_SEED}, utils::calculate_fees, PTokenProgramError};

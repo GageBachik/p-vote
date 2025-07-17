@@ -1,9 +1,8 @@
 use bytemuck::{Pod, Zeroable};
 use pinocchio::{
-    account_info::AccountInfo, instruction::{Seed, Signer}, program_error::ProgramError, pubkey, sysvars::{rent::Rent, Sysvar}, ProgramResult
+    account_info::AccountInfo, instruction::{Seed, Signer}, program_error::ProgramError, sysvars::{Sysvar}, ProgramResult
 };
 
-use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
 use pinocchio_token::instructions::Transfer;
 use pinocchio::sysvars::clock::Clock;
