@@ -3,6 +3,7 @@ use pinocchio::{
     account_info::AccountInfo, program_error::ProgramError, pubkey, sysvars::{rent::Rent, Sysvar}, ProgramResult
 };
 
+use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
 use pinocchio_system::instructions::Transfer;
 use pinocchio::sysvars::clock::Clock;
@@ -31,10 +32,12 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
         };
 
         if !authority.is_signer() {
+            log!("authority was not signer");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
         if !platform.is_owned_by(&crate::ID) {
+            log!("platform not owned by our program");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -43,10 +46,12 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
         }
 
         if !vote.is_signer(){
+            log!("vote was not signer");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
         if !vote.is_owned_by(&pinocchio_system::ID) {
+            log!("vote account already initialized");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -59,10 +64,12 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
         }
 
         if !token.is_owned_by(&pinocchio_token::ID) {
+            log!("token mint not owned by token program");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
         if !vote_vault.is_owned_by(&pinocchio_system::ID) {
+            log!("vote vault isn't owned by system? | {}", vote_vault.owner());
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -71,6 +78,7 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
         }
 
         if !vote_vault_token_account.is_owned_by(&pinocchio_system::ID) {
+            log!("vote vault token account not owned by system");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -172,7 +180,7 @@ impl<'info> InitializeVote<'info> {
             to: self.accounts.vote_vault_token_account,
             space: TokenAccount::LEN as u64,
             lamports: Rent::get()?.minimum_balance(TokenAccount::LEN),
-            owner: &crate::ID,
+            owner: &pinocchio_token::ID,
         }
         .invoke()?;
 
