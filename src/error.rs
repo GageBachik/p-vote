@@ -13,7 +13,7 @@ pub enum PTokenProgramError {
     VoteHasAlreadyEnded = 6007,
     VoteIsStillRunning = 6008,
     VoteWasTied = 6009,
-    DidNotVoteForWinningSide = 6010
+    DidNotVoteForWinningSide = 6010,
 }
 
 impl From<PTokenProgramError> for ProgramError {

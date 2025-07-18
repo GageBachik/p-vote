@@ -1,14 +1,22 @@
 use bytemuck::{Pod, Zeroable};
 use pinocchio::{
-    account_info::AccountInfo, instruction::{Seed, Signer}, program_error::ProgramError, sysvars::{Sysvar}, ProgramResult
+    account_info::AccountInfo,
+    instruction::{Seed, Signer},
+    program_error::ProgramError,
+    sysvars::Sysvar,
+    ProgramResult,
 };
 
+use pinocchio::sysvars::clock::Clock;
 use pinocchio_pubkey::derive_address;
 use pinocchio_token::instructions::Transfer;
-use pinocchio::sysvars::clock::Clock;
 use shank::ShankType;
 
-use crate::{state::{Platform, Position, Vote, PLATFORM_SEED, POSITION_SEED}, utils::calculate_fees, PTokenProgramError};
+use crate::{
+    state::{Platform, Position, Vote, PLATFORM_SEED, POSITION_SEED},
+    utils::calculate_fees,
+    PTokenProgramError,
+};
 
 #[repr(C)]
 pub struct RedeemWinningsAccounts<'info> {
@@ -22,14 +30,15 @@ pub struct RedeemWinningsAccounts<'info> {
     pub authority_token_account: &'info AccountInfo,
     pub vault_token_account: &'info AccountInfo,
     pub position: &'info AccountInfo,
-
 }
 
 impl<'info> TryFrom<&'info [AccountInfo]> for RedeemWinningsAccounts<'info> {
     type Error = ProgramError;
 
     fn try_from(accounts: &'info [AccountInfo]) -> Result<Self, Self::Error> {
-        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position,  ..] = accounts else {
+        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position, ..] =
+            accounts
+        else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
@@ -74,26 +83,36 @@ impl<'info> TryFrom<&'info [AccountInfo]> for RedeemWinningsAccounts<'info> {
             return Err(ProgramError::InvalidAccountData);
         }
 
-        if vote_vault_token_account.is_owned_by(&pinocchio_token::ID){
+        if vote_vault_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if authority_token_account.is_owned_by(&pinocchio_token::ID){
+        if authority_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if vault_token_account.is_owned_by(&pinocchio_token::ID){
+        if vault_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        Ok(Self { authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position})
+        Ok(Self {
+            authority,
+            platform,
+            vault,
+            vote,
+            token,
+            vote_vault,
+            vote_vault_token_account,
+            authority_token_account,
+            vault_token_account,
+            position,
+        })
     }
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable, ShankType)]
-pub struct RedeemWinningsInstructionData {
-}
+pub struct RedeemWinningsInstructionData {}
 
 impl RedeemWinningsInstructionData {
     pub const LEN: usize = core::mem::size_of::<RedeemWinningsInstructionData>();
@@ -138,22 +157,42 @@ impl<'info> RedeemWinnings<'info> {
         // mainly that platform, vault, vote_vault, and poisition_pda are correct
         let mut platform = self.accounts.platform.clone();
         let platform_state = Platform::load(&mut platform)?;
-        if self.accounts.platform.key().ne(&derive_address(&[PLATFORM_SEED], Some(platform_state.platform_bump), &crate::ID)) {
+        if self.accounts.platform.key().ne(&derive_address(
+            &[PLATFORM_SEED],
+            Some(platform_state.platform_bump),
+            &crate::ID,
+        )) {
             return Err(PTokenProgramError::PlatformKeyIncorrect.into());
         }
-        if self.accounts.vault.key().ne(&derive_address(&[self.accounts.platform.key().as_ref()], Some(platform_state.vault_bump), &crate::ID)){
+        if self.accounts.vault.key().ne(&derive_address(
+            &[self.accounts.platform.key().as_ref()],
+            Some(platform_state.vault_bump),
+            &crate::ID,
+        )) {
             return Err(PTokenProgramError::VaultKeyIncorrect.into());
         }
         let mut vote = self.accounts.vote.clone();
         let vote_state = Vote::load(&mut vote)?;
-        if self.accounts.vote_vault.key().ne(&derive_address(&[self.accounts.vote.key().as_ref()], Some(vote_state.vault_bump), &crate::ID)) {
+        if self.accounts.vote_vault.key().ne(&derive_address(
+            &[self.accounts.vote.key().as_ref()],
+            Some(vote_state.vault_bump),
+            &crate::ID,
+        )) {
             return Err(PTokenProgramError::VoteVaultKeyIncorrect.into());
         };
 
         let mut position = self.accounts.position.clone();
         let position_state = Position::load(&mut position)?;
         // find the position PDA
-        if self.accounts.position.key().ne(&derive_address(&[POSITION_SEED, self.accounts.vote.key().as_ref(), self.accounts.authority.key().as_ref()], Some(position_state.bump), &crate::ID)) {
+        if self.accounts.position.key().ne(&derive_address(
+            &[
+                POSITION_SEED,
+                self.accounts.vote.key().as_ref(),
+                self.accounts.authority.key().as_ref(),
+            ],
+            Some(position_state.bump),
+            &crate::ID,
+        )) {
             return Err(PTokenProgramError::VoteVaultKeyIncorrect.into());
         };
 
@@ -189,9 +228,17 @@ impl<'info> RedeemWinnings<'info> {
         }
 
         let winning_side = winning_side.unwrap(); // safe now
-        
-        let winning_total = if winning_side { total_true } else { total_false };
-        let losing_total  = if winning_side { total_false } else { total_true };
+
+        let winning_total = if winning_side {
+            total_true
+        } else {
+            total_false
+        };
+        let losing_total = if winning_side {
+            total_false
+        } else {
+            total_true
+        };
 
         let position_amount = u64::from_le_bytes(position_state.amount);
         let reward = position_amount + (position_amount * losing_total) / winning_total;
@@ -202,7 +249,7 @@ impl<'info> RedeemWinnings<'info> {
         let bump = [vote_state.vault_bump];
         let seeds = [
             Seed::from(self.accounts.vote.key().as_ref()),
-            Seed::from(&bump)
+            Seed::from(&bump),
         ];
         let signer_seeds = Signer::from(&seeds);
 
@@ -227,8 +274,9 @@ impl<'info> RedeemWinnings<'info> {
             let mut data = self.accounts.position.try_borrow_mut_data()?;
             data[0] = 0xff;
         }
- 
-        *self.accounts.vault.try_borrow_mut_lamports()? += *self.accounts.position.try_borrow_lamports()?;
+
+        *self.accounts.vault.try_borrow_mut_lamports()? +=
+            *self.accounts.position.try_borrow_lamports()?;
         self.accounts.position.resize(1)?;
         self.accounts.position.close()?;
 

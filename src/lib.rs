@@ -2,16 +2,17 @@
 #![allow(unexpected_cfgs)]
 
 use pinocchio::{
-    ProgramResult, account_info::AccountInfo, entrypoint, program_error::ProgramError,
+    account_info::AccountInfo, entrypoint, program_error::ProgramError, ProgramResult,
 };
+use shank::ShankInstruction;
 
+pub mod error;
 pub mod instructions;
 pub mod state;
-pub mod error;
 pub mod utils;
 
-pub use instructions::*;
 pub use error::*;
+pub use instructions::*;
 
 pinocchio_pubkey::declare_id!("2YwymitHUGW6vwk66cZpVoq5oGD31Ziz41UNokMBrKeY");
 
@@ -36,4 +37,17 @@ fn process_instruction(
         Some((5, data)) => RedeemWinnings::try_from((accounts, data))?.process(),
         _ => Err(PTokenProgramError::InvalidDiscriminator.into()),
     }
+}
+
+/// Instructions for ptoken. This is currently not used in the
+/// program business logic, but we include it for IDL generation.
+#[repr(u8)]
+#[derive(Clone, Debug, PartialEq, ShankInstruction)]
+pub enum PTokenInstructions {
+    InitializePlatform,
+    UpdatePlatform,
+    InitializeVote,
+    IntitializePosition,
+    UpdatePosition,
+    RedeemWinnings,
 }

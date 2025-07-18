@@ -1,7 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use pinocchio::{
-      account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey
-};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
 use shank::ShankAccount;
 
 // vote accounts are full accounts so no need for seeds
@@ -11,10 +9,10 @@ use shank::ShankAccount;
 #[derive(Clone, Copy, Pod, Zeroable, ShankAccount)]
 pub struct Vote {
     pub token: Pubkey,
-    pub true_votes: [u8; 8], //u64
-    pub false_votes: [u8; 8], //u64
+    pub true_votes: [u8; 8],    //u64
+    pub false_votes: [u8; 8],   //u64
     pub end_timestamp: [u8; 8], //i64
-    pub vault_bump: u8
+    pub vault_bump: u8,
 }
 
 impl Vote {

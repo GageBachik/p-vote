@@ -1,15 +1,13 @@
 use bytemuck::{Pod, Zeroable};
-use pinocchio::{
-    ProgramResult,
-    account_info::AccountInfo,
-    program_error::ProgramError,
-};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
 use shank::ShankType;
 
-use crate::{state::{Platform, PLATFORM_SEED}, PTokenProgramError};
-
+use crate::{
+    state::{Platform, PLATFORM_SEED},
+    PTokenProgramError,
+};
 
 // This is where we'll try and preform most of our safety checks
 // anything that cant be done here can be done in the process functions
@@ -41,7 +39,12 @@ impl<'info> TryFrom<&'info [AccountInfo]> for UpdatePlatformAccounts<'info> {
             return Err(ProgramError::InvalidAccountData);
         }
 
-        Ok(Self { old_authority, new_authority, platform, vault})
+        Ok(Self {
+            old_authority,
+            new_authority,
+            platform,
+            vault,
+        })
     }
 }
 
@@ -90,27 +93,35 @@ impl<'info> TryFrom<(&'info [AccountInfo], &'info [u8])> for UpdatePlatform<'inf
 
 impl<'info> UpdatePlatform<'info> {
     pub fn process(&mut self) -> ProgramResult {
-
         // Start with any checks that aren't possible from the accounts alone.
         // Things that need BOTH accounts and data to handle:
-        // load the current config account 
+        // load the current config account
         // could do it in accounts but then we'd have to load it twice. one to view and one to mutate.
-        // worth considering doing just to have all validations in the same place 
-
+        // worth considering doing just to have all validations in the same place
 
         let mut platform = self.accounts.platform.clone();
         let platform_state = Platform::load(&mut platform)?;
 
-        if self.accounts.platform.key().ne(&derive_address(&[PLATFORM_SEED], Some(platform_state.platform_bump), &crate::ID)) {
-            log!("self.accounts.platform key: {} | Derived: {}", self.accounts.platform.key(), &derive_address(&[PLATFORM_SEED], None, &crate::ID));
+        if self.accounts.platform.key().ne(&derive_address(
+            &[PLATFORM_SEED],
+            Some(platform_state.platform_bump),
+            &crate::ID,
+        )) {
+            log!(
+                "self.accounts.platform key: {} | Derived: {}",
+                self.accounts.platform.key(),
+                &derive_address(&[PLATFORM_SEED], None, &crate::ID)
+            );
             return Err(PTokenProgramError::PlatformKeyIncorrect.into());
         }
 
         // Check if the current authority is the one we expect.
-        if platform_state.authority.ne(self.accounts.old_authority.key()) {
+        if platform_state
+            .authority
+            .ne(self.accounts.old_authority.key())
+        {
             return Err(ProgramError::IncorrectAuthority);
         }
-
 
         // If all checks out we can swap authorities (in intended). and or change the platform fee
         platform_state.authority = *self.accounts.new_authority.key();

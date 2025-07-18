@@ -1,7 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use pinocchio::{
-      account_info::AccountInfo, program_error::ProgramError
-};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError};
 use shank::ShankAccount;
 
 // Full account will be positon_seed + vote_account + user keypair

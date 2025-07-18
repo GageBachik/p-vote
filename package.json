@@ -2,17 +2,22 @@
   "name": "p-vote",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build-cli": "node ./scripts/generate-client.ts",
     "build-sol": "cargo build-sbf",
     "start": "next start",
     "lint": "next lint",
     "lint-sol": "cargo clippy"
   },
   "dependencies": {
+    "@codama/nodes-from-anchor": "^1.2.2",
+    "@codama/renderers": "^1.0.26",
     "@codama/renderers-js": "^1.3.0",
     "@codama/renderers-rust": "^1.1.1",
+    "@solana/kit": "^2.3.0",
     "codama": "^1.3.0",
     "next": "15.4.1",
     "react": "19.1.0",

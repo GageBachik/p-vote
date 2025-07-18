@@ -1,7 +1,5 @@
 use bytemuck::{Pod, Zeroable};
-use pinocchio::{
-      account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey
-};
+use pinocchio::{account_info::AccountInfo, program_error::ProgramError, pubkey::Pubkey};
 use shank::ShankAccount;
 
 pub const PLATFORM_SEED: &[u8; 6] = b"config";

@@ -1,7 +1,10 @@
 use mollusk_svm::{program, Mollusk};
 use mollusk_svm_bencher::MolluskComputeUnitBencher;
 
-use p_vote::instructions::{initialize_platform::InitializePlatformInstructionData, update_platform::UpdatePlatformInstructionData};
+use p_vote::instructions::{
+    initialize_platform::InitializePlatformInstructionData,
+    update_platform::UpdatePlatformInstructionData,
+};
 use p_vote::state::{Platform, PLATFORM_SEED};
 use p_vote::{InitializeVoteInstructionData, ID};
 
@@ -38,25 +41,24 @@ fn main() {
         &mollusk_svm::program::loader_keys::LOADER_V3,
     );
 
-     //system program and system account
-     let (system_program, system_account) = program::keyed_account_for_system_program();
+    //system program and system account
+    let (system_program, system_account) = program::keyed_account_for_system_program();
 
-     println!("old authority: {:?}", AUTHORITY);
- 
-     let new_authority = Pubkey::new_unique();
-     println!("new authority: {:?}", new_authority);
- 
-     // Create the Platform PDA
-     let (platform_pda, platform_bump) =
-         Pubkey::find_program_address(&[PLATFORM_SEED], &PROGRAM);
-     println!("platform: {:?}", platform_pda);
- 
-     // Create the vault PDA
-     let (vault_pda, vault_bump) =
-     Pubkey::find_program_address(&[platform_pda.to_bytes().as_ref()], &PROGRAM);
-     println!("vault: {:?}", vault_pda);
+    println!("old authority: {:?}", AUTHORITY);
 
-         //Initialize the accounts
+    let new_authority = Pubkey::new_unique();
+    println!("new authority: {:?}", new_authority);
+
+    // Create the Platform PDA
+    let (platform_pda, platform_bump) = Pubkey::find_program_address(&[PLATFORM_SEED], &PROGRAM);
+    println!("platform: {:?}", platform_pda);
+
+    // Create the vault PDA
+    let (vault_pda, vault_bump) =
+        Pubkey::find_program_address(&[platform_pda.to_bytes().as_ref()], &PROGRAM);
+    println!("vault: {:?}", vault_pda);
+
+    //Initialize the accounts
     let authority_account = Account::new(1 * LAMPORTS_PER_SOL, 0, &system_program);
     let platform_account = Account::new(0, 0, &system_program);
     let vault_account = Account::new(0, 0, &system_program);
@@ -77,17 +79,22 @@ fn main() {
     let initialize_platform_ix_data = InitializePlatformInstructionData {
         fee: (500 as u16).to_le_bytes(),
         platform_bump: platform_bump,
-        vault_bump: vault_bump
+        vault_bump: vault_bump,
     };
 
     // Bytemuck serialize the data
     let initialize_platform_ix_data_bytes = bytemuck::bytes_of(&initialize_platform_ix_data);
 
     // add the discriminator to tell it what ix to run 0 => initialize_program
-    let initialize_platform_instruction_data = [vec![0], initialize_platform_ix_data_bytes.to_vec()].concat();
+    let initialize_platform_instruction_data =
+        [vec![0], initialize_platform_ix_data_bytes.to_vec()].concat();
 
     // Create instruction
-    let initialize_platform_instruction = Instruction::new_with_bytes(PROGRAM, &initialize_platform_instruction_data, initialize_platform_ix_accounts);
+    let initialize_platform_instruction = Instruction::new_with_bytes(
+        PROGRAM,
+        &initialize_platform_instruction_data,
+        initialize_platform_ix_accounts,
+    );
 
     // Create tx_accounts vec
     let initialize_platform_tx_accounts = &vec![
@@ -100,60 +107,66 @@ fn main() {
 
     //  ##################################### Next Ix
 
-     //Initialize the accounts
-     let old_authority_account = Account::new(1 * LAMPORTS_PER_SOL, 0, &system_program);
-     let new_authority_account = Account::new(2 * LAMPORTS_PER_SOL, 0, &system_program);
-     let platform_init_state = Platform {
-         authority: AUTHORITY.to_bytes(),
-         fee: (500 as u16).to_le_bytes(),
-         platform_bump: platform_bump,
-         vault_bump: vault_bump
-     };
-     let mut platform_account = AccountSharedData::new(
-         mollusk.sysvars.rent.minimum_balance(Platform::LEN),
-         Platform::LEN,
-         &PROGRAM
-     );
-     platform_account.set_data_from_slice(bytemuck::bytes_of(&platform_init_state));
-     let vault_account = Account::new(( 0.01 * 1e9 ) as u64, 0, &system_program);
-     let min_balance = mollusk.sysvars.rent.minimum_balance(Rent::size_of());
-     let mut rent_account = Account::new(min_balance, Rent::size_of(), &RENT);
-     rent_account.data = get_rent_data();
- 
-     //Push the accounts in to the instruction_accounts vec!
-     let update_platform_ix_accounts = vec![
-         AccountMeta::new(AUTHORITY, true),
-         AccountMeta::new(new_authority, true),
-         AccountMeta::new(platform_pda, false),
-         AccountMeta::new(vault_pda, false),
-         // Required for ix
-         AccountMeta::new_readonly(RENT, false),
-         AccountMeta::new_readonly(system_program, false),
-     ];
- 
-     // Create the instruction data
-     let update_platform_instruction_data = UpdatePlatformInstructionData {
-         new_fee: (333 as u16).to_le_bytes(),
-     };
- 
-     // Bytemuck serialize the data
-     let update_platform_instruction_data_bytes = bytemuck::bytes_of(&update_platform_instruction_data);
- 
-     // add the discriminator to tell it what ix to run 0 => update_program
-     let update_platform_instruction_data = [vec![1], update_platform_instruction_data_bytes.to_vec()].concat();
- 
-     // Create instruction
-     let update_platform_instruction = Instruction::new_with_bytes(PROGRAM, &update_platform_instruction_data, update_platform_ix_accounts);
- 
-     // Create tx_accounts vec
-     let update_platform_tx_accounts = &vec![
-         (AUTHORITY, old_authority_account.clone()),
-         (new_authority, new_authority_account.clone()),
-         (platform_pda, platform_account.clone().into()),
-         (vault_pda, vault_account.clone()),
-         (RENT, rent_account.clone()),
-         (system_program, system_account.clone()),
-     ]; 
+    //Initialize the accounts
+    let old_authority_account = Account::new(1 * LAMPORTS_PER_SOL, 0, &system_program);
+    let new_authority_account = Account::new(2 * LAMPORTS_PER_SOL, 0, &system_program);
+    let platform_init_state = Platform {
+        authority: AUTHORITY.to_bytes(),
+        fee: (500 as u16).to_le_bytes(),
+        platform_bump: platform_bump,
+        vault_bump: vault_bump,
+    };
+    let mut platform_account = AccountSharedData::new(
+        mollusk.sysvars.rent.minimum_balance(Platform::LEN),
+        Platform::LEN,
+        &PROGRAM,
+    );
+    platform_account.set_data_from_slice(bytemuck::bytes_of(&platform_init_state));
+    let vault_account = Account::new((0.01 * 1e9) as u64, 0, &system_program);
+    let min_balance = mollusk.sysvars.rent.minimum_balance(Rent::size_of());
+    let mut rent_account = Account::new(min_balance, Rent::size_of(), &RENT);
+    rent_account.data = get_rent_data();
+
+    //Push the accounts in to the instruction_accounts vec!
+    let update_platform_ix_accounts = vec![
+        AccountMeta::new(AUTHORITY, true),
+        AccountMeta::new(new_authority, true),
+        AccountMeta::new(platform_pda, false),
+        AccountMeta::new(vault_pda, false),
+        // Required for ix
+        AccountMeta::new_readonly(RENT, false),
+        AccountMeta::new_readonly(system_program, false),
+    ];
+
+    // Create the instruction data
+    let update_platform_instruction_data = UpdatePlatformInstructionData {
+        new_fee: (333 as u16).to_le_bytes(),
+    };
+
+    // Bytemuck serialize the data
+    let update_platform_instruction_data_bytes =
+        bytemuck::bytes_of(&update_platform_instruction_data);
+
+    // add the discriminator to tell it what ix to run 0 => update_program
+    let update_platform_instruction_data =
+        [vec![1], update_platform_instruction_data_bytes.to_vec()].concat();
+
+    // Create instruction
+    let update_platform_instruction = Instruction::new_with_bytes(
+        PROGRAM,
+        &update_platform_instruction_data,
+        update_platform_ix_accounts,
+    );
+
+    // Create tx_accounts vec
+    let update_platform_tx_accounts = &vec![
+        (AUTHORITY, old_authority_account.clone()),
+        (new_authority, new_authority_account.clone()),
+        (platform_pda, platform_account.clone().into()),
+        (vault_pda, vault_account.clone()),
+        (RENT, rent_account.clone()),
+        (system_program, system_account.clone()),
+    ];
 
     //  ##################################### Next Ix
 
@@ -188,17 +201,14 @@ fn main() {
     )
     .unwrap();
 
-
     // Create the Platform PDA
-    let (platform_pda, platform_bump) =
-        Pubkey::find_program_address(&[PLATFORM_SEED], &PROGRAM);
+    let (platform_pda, platform_bump) = Pubkey::find_program_address(&[PLATFORM_SEED], &PROGRAM);
     println!("platform: {:?}", platform_pda);
 
     // Create the vault PDA
     let (vault_pda, vault_bump) =
-    Pubkey::find_program_address(&[platform_pda.to_bytes().as_ref()], &PROGRAM);
+        Pubkey::find_program_address(&[platform_pda.to_bytes().as_ref()], &PROGRAM);
     println!("vault: {:?}", vault_pda);
-
 
     //Initialize the accounts
     let authority_account = Account::new(1 * LAMPORTS_PER_SOL, 0, &system_program);
@@ -206,35 +216,36 @@ fn main() {
         authority: AUTHORITY.to_bytes(),
         fee: (100 as u16).to_le_bytes(),
         platform_bump: platform_bump,
-        vault_bump: vault_bump
+        vault_bump: vault_bump,
     };
     let mut platform_account = AccountSharedData::new(
         mollusk.sysvars.rent.minimum_balance(Platform::LEN),
         Platform::LEN,
-        &PROGRAM
+        &PROGRAM,
     );
     platform_account.set_data_from_slice(bytemuck::bytes_of(&platform_init_state));
-
 
     let vote_key = Pubkey::new_unique();
     let vote_account = Account::new(0, 0, &system_program);
     // Create the vote vault PDA
     let (vote_vault_pda, _vote_vault_bump) =
-    Pubkey::find_program_address(&[vote_key.to_bytes().as_ref()], &PROGRAM);
+        Pubkey::find_program_address(&[vote_key.to_bytes().as_ref()], &PROGRAM);
     let vote_vault_account = Account::new(0, 0, &system_program);
 
-    let vault_account = Account::new(( 0.01 * 1e9 ) as u64, 0, &system_program);
+    let vault_account = Account::new((0.01 * 1e9) as u64, 0, &system_program);
     let min_balance = mollusk.sysvars.rent.minimum_balance(Rent::size_of());
     let mut rent_account = Account::new(min_balance, Rent::size_of(), &RENT);
     rent_account.data = get_rent_data();
 
     // Create the vault PDA
-    let (vote_vault_token_pda, _vote_vault_token_bump) =
-    Pubkey::find_program_address(&[
-        vote_vault_pda.as_ref(),
-        spl_token::ID.as_ref(),
-        mint_usdc.as_ref(),
-    ], &spl_associated_token_account::ID);
+    let (vote_vault_token_pda, _vote_vault_token_bump) = Pubkey::find_program_address(
+        &[
+            vote_vault_pda.as_ref(),
+            spl_token::ID.as_ref(),
+            mint_usdc.as_ref(),
+        ],
+        &spl_associated_token_account::ID,
+    );
     let vote_vault_token_account = Account::new(0, 0, &system_program);
 
     //Push the accounts in to the instruction_accounts vec!
@@ -268,23 +279,39 @@ fn main() {
 
     // Create the instruction data
     let initialize_vote_instruction_data = InitializeVoteInstructionData {
-        time_to_add: 3600i64.to_le_bytes()
+        time_to_add: 3600i64.to_le_bytes(),
     };
     // Bytemuck serialize the data
-    let initialize_vote_instruction_data_bytes = bytemuck::bytes_of(&initialize_vote_instruction_data);
+    let initialize_vote_instruction_data_bytes =
+        bytemuck::bytes_of(&initialize_vote_instruction_data);
     // add the discriminator to tell it what ix to run 2 => initialize_vote
-    let initialize_vote_instruction_data = [vec![2], initialize_vote_instruction_data_bytes.to_vec()].concat();
+    let initialize_vote_instruction_data =
+        [vec![2], initialize_vote_instruction_data_bytes.to_vec()].concat();
     // Create instruction
-    let initialize_vote_instruction = Instruction::new_with_bytes(PROGRAM, &initialize_vote_instruction_data, initialize_vote_ix_accounts);
-
+    let initialize_vote_instruction = Instruction::new_with_bytes(
+        PROGRAM,
+        &initialize_vote_instruction_data,
+        initialize_vote_ix_accounts,
+    );
 
     //  ##################################### Next Ix
 
-
     MolluskComputeUnitBencher::new(mollusk)
-        .bench(("InitializePlatform", &initialize_platform_instruction, initialize_platform_tx_accounts))
-        .bench(("UpdatePlatform", &update_platform_instruction, update_platform_tx_accounts))
-        .bench(("InitializeVote", &initialize_vote_instruction, initialize_vote_tx_accounts))
+        .bench((
+            "InitializePlatform",
+            &initialize_platform_instruction,
+            initialize_platform_tx_accounts,
+        ))
+        .bench((
+            "UpdatePlatform",
+            &update_platform_instruction,
+            update_platform_tx_accounts,
+        ))
+        .bench((
+            "InitializeVote",
+            &initialize_vote_instruction,
+            initialize_vote_tx_accounts,
+        ))
         .must_pass(true)
         .out_dir("benches/")
         .execute();

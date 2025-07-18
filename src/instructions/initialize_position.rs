@@ -1,14 +1,23 @@
 use bytemuck::{Pod, Zeroable};
 use pinocchio::{
-    account_info::AccountInfo, instruction::{Seed, Signer}, program_error::ProgramError, pubkey, sysvars::{rent::Rent, Sysvar}, ProgramResult
+    account_info::AccountInfo,
+    instruction::{Seed, Signer},
+    program_error::ProgramError,
+    pubkey,
+    sysvars::{rent::Rent, Sysvar},
+    ProgramResult,
 };
 
+use pinocchio::sysvars::clock::Clock;
 use pinocchio_pubkey::derive_address;
 use pinocchio_token::instructions::Transfer;
-use pinocchio::sysvars::clock::Clock;
 use shank::ShankType;
 
-use crate::{state::{Platform, Position, Vote, PLATFORM_SEED, POSITION_SEED}, utils::calculate_fees, PTokenProgramError};
+use crate::{
+    state::{Platform, Position, Vote, PLATFORM_SEED, POSITION_SEED},
+    utils::calculate_fees,
+    PTokenProgramError,
+};
 
 #[repr(C)]
 pub struct InitializePositionAccounts<'info> {
@@ -22,14 +31,15 @@ pub struct InitializePositionAccounts<'info> {
     pub authority_token_account: &'info AccountInfo,
     pub vault_token_account: &'info AccountInfo,
     pub position: &'info AccountInfo,
-
 }
 
 impl<'info> TryFrom<&'info [AccountInfo]> for InitializePositionAccounts<'info> {
     type Error = ProgramError;
 
     fn try_from(accounts: &'info [AccountInfo]) -> Result<Self, Self::Error> {
-        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position,  ..] = accounts else {
+        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position, ..] =
+            accounts
+        else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
@@ -75,19 +85,30 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePositionAccounts<'info> 
             return Err(ProgramError::AccountAlreadyInitialized);
         }
 
-        if vote_vault_token_account.is_owned_by(&pinocchio_token::ID){
+        if vote_vault_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if authority_token_account.is_owned_by(&pinocchio_token::ID){
+        if authority_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if vault_token_account.is_owned_by(&pinocchio_token::ID){
+        if vault_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        Ok(Self { authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position})
+        Ok(Self {
+            authority,
+            platform,
+            vault,
+            vote,
+            token,
+            vote_vault,
+            vote_vault_token_account,
+            authority_token_account,
+            vault_token_account,
+            position,
+        })
     }
 }
 
@@ -141,22 +162,40 @@ impl<'info> InitializePosition<'info> {
         // mainly that platform, vault, vote_vault, and poisition_pda are correct
         let mut platform = self.accounts.platform.clone();
         let platform_state = Platform::load(&mut platform)?;
-        if self.accounts.platform.key().ne(&derive_address(&[PLATFORM_SEED], Some(platform_state.platform_bump), &crate::ID)) {
+        if self.accounts.platform.key().ne(&derive_address(
+            &[PLATFORM_SEED],
+            Some(platform_state.platform_bump),
+            &crate::ID,
+        )) {
             return Err(PTokenProgramError::PlatformKeyIncorrect.into());
         }
-        if self.accounts.vault.key().ne(&derive_address(&[self.accounts.platform.key().as_ref()], Some(platform_state.vault_bump), &crate::ID)){
+        if self.accounts.vault.key().ne(&derive_address(
+            &[self.accounts.platform.key().as_ref()],
+            Some(platform_state.vault_bump),
+            &crate::ID,
+        )) {
             return Err(PTokenProgramError::VaultKeyIncorrect.into());
         }
         let mut vote = self.accounts.vote.clone();
         let vote_state = Vote::load(&mut vote)?;
-        if self.accounts.vote_vault.key().ne(&derive_address(&[self.accounts.vote.key().as_ref()], Some(vote_state.vault_bump), &crate::ID)) {
+        if self.accounts.vote_vault.key().ne(&derive_address(
+            &[self.accounts.vote.key().as_ref()],
+            Some(vote_state.vault_bump),
+            &crate::ID,
+        )) {
             return Err(PTokenProgramError::VoteVaultKeyIncorrect.into());
         };
 
         // cant use derive_address yet for security concerns
         // find the vault PDA
-        let (position_pda, position_bump) =
-        pubkey::find_program_address(&[POSITION_SEED, self.accounts.vote.key().as_ref(), self.accounts.authority.key().as_ref()], &crate::ID);
+        let (position_pda, position_bump) = pubkey::find_program_address(
+            &[
+                POSITION_SEED,
+                self.accounts.vote.key().as_ref(),
+                self.accounts.authority.key().as_ref(),
+            ],
+            &crate::ID,
+        );
         // check that it matches what the user supplied:
         if self.accounts.position.key().ne(&position_pda) {
             return Err(PTokenProgramError::PositionKeyIncorrect.into());
@@ -185,7 +224,6 @@ impl<'info> InitializePosition<'info> {
             owner: &crate::ID,
         }
         .invoke_signed(&[signer_seeds])?;
-
 
         // Transfer appropiate token and fees
         let init_amount = u64::from_be_bytes(self.instruction_data.amount);
@@ -216,9 +254,11 @@ impl<'info> InitializePosition<'info> {
         position_state.bump = position_bump;
 
         if self.instruction_data.side == 0 {
-            vote_state.false_votes = (u64::from_le_bytes(vote_state.false_votes) + init_amount).to_le_bytes();
-        }else {
-            vote_state.true_votes = (u64::from_le_bytes(vote_state.true_votes) + init_amount).to_le_bytes();
+            vote_state.false_votes =
+                (u64::from_le_bytes(vote_state.false_votes) + init_amount).to_le_bytes();
+        } else {
+            vote_state.true_votes =
+                (u64::from_le_bytes(vote_state.true_votes) + init_amount).to_le_bytes();
         }
 
         Ok(())

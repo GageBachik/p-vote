@@ -1,0 +1,307 @@
+{
+  "version": "0.1.0",
+  "name": "p_vote",
+  "instructions": [
+    {
+      "name": "InitializePlatform",
+      "accounts": [],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 0
+      }
+    },
+    {
+      "name": "UpdatePlatform",
+      "accounts": [],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 1
+      }
+    },
+    {
+      "name": "InitializeVote",
+      "accounts": [],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 2
+      }
+    },
+    {
+      "name": "IntitializePosition",
+      "accounts": [],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 3
+      }
+    },
+    {
+      "name": "UpdatePosition",
+      "accounts": [],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 4
+      }
+    },
+    {
+      "name": "RedeemWinnings",
+      "accounts": [],
+      "args": [],
+      "discriminant": {
+        "type": "u8",
+        "value": 5
+      }
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Platform",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "fee",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "platformBump",
+            "type": "u8"
+          },
+          {
+            "name": "vaultBump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Position",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "side",
+            "type": "u8"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vote",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "token",
+            "type": "publicKey"
+          },
+          {
+            "name": "trueVotes",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "falseVotes",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "endTimestamp",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "vaultBump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "InitializePlatformInstructionData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "fee",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          },
+          {
+            "name": "platformBump",
+            "type": "u8"
+          },
+          {
+            "name": "vaultBump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitializePositionInstructionData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          },
+          {
+            "name": "side",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InitializeVoteInstructionData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "timeToAdd",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "RedeemWinningsInstructionData",
+      "type": {
+        "kind": "struct",
+        "fields": []
+      }
+    },
+    {
+      "name": "UpdatePlatformInstructionData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "newFee",
+            "type": {
+              "array": [
+                "u8",
+                2
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdatesPositionInstructionData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount",
+            "type": {
+              "array": [
+                "u8",
+                8
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "PTokenProgramError",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "InvalidDiscriminator"
+          },
+          {
+            "name": "PlatformKeyIncorrect"
+          },
+          {
+            "name": "VaultKeyIncorrect"
+          },
+          {
+            "name": "VoteVaultKeyIncorrect"
+          },
+          {
+            "name": "PositionKeyIncorrect"
+          },
+          {
+            "name": "VoteVaultTokenAccountIncorrect"
+          },
+          {
+            "name": "VoteHasAlreadyEnded"
+          },
+          {
+            "name": "VoteIsStillRunning"
+          },
+          {
+            "name": "VoteWasTied"
+          },
+          {
+            "name": "DidNotVoteForWinningSide"
+          }
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "origin": "shank",
+    "address": "2YwymitHUGW6vwk66cZpVoq5oGD31Ziz41UNokMBrKeY"
+  }
+}

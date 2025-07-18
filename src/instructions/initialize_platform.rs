@@ -1,10 +1,10 @@
 use bytemuck::{Pod, Zeroable};
 use pinocchio::{
-    ProgramResult,
     account_info::AccountInfo,
     instruction::{Seed, Signer},
     program_error::ProgramError,
-    sysvars::{Sysvar, rent::Rent},
+    sysvars::{rent::Rent, Sysvar},
+    ProgramResult,
 };
 
 use pinocchio_system::instructions::Transfer;
@@ -51,7 +51,11 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePlatformAccounts<'info> 
         //     return Err(PTokenProgramError::VaultKeyIncorrect.into());
         // }
 
-        Ok(Self { authority, platform, vault})
+        Ok(Self {
+            authority,
+            platform,
+            vault,
+        })
     }
 }
 
@@ -60,7 +64,7 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePlatformAccounts<'info> 
 pub struct InitializePlatformInstructionData {
     pub fee: [u8; 2],
     pub platform_bump: u8,
-    pub vault_bump: u8
+    pub vault_bump: u8,
 }
 
 impl InitializePlatformInstructionData {
@@ -102,12 +106,8 @@ impl<'info> TryFrom<(&'info [AccountInfo], &'info [u8])> for InitializePlatform<
 
 impl<'info> InitializePlatform<'info> {
     pub fn process(&mut self) -> ProgramResult {
-
         let bump = [self.instruction_data.platform_bump];
-        let seed = [
-            Seed::from(PLATFORM_SEED),
-            Seed::from(&bump),
-        ];
+        let seed = [Seed::from(PLATFORM_SEED), Seed::from(&bump)];
         let signer_seeds = Signer::from(&seed);
 
         // Initialize the platform account
