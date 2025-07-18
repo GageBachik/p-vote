@@ -22,7 +22,7 @@ export function SolanaSignMessageFeaturePanel({ account }: Props) {
             ]);
             const signature = result?.signatures[account.address as Address];
             if (!signature) {
-                throw new Error();
+                throw new Error('Failed to get signature from wallet');
             }
             return signature as ReadonlyUint8Array;
         },

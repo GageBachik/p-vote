@@ -1,14 +1,24 @@
 "use client"
 
 import { mainnet, testnet } from '@solana/kit';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { ChainContext, DEFAULT_CHAIN_CONFIG } from './ChainContext';
 
 const STORAGE_KEY = 'solana-example-react-app:selected-chain';
 
 export function ChainContextProvider({ children }: { children: React.ReactNode }) {
-    const [chain, setChain] = useState(() => localStorage.getItem(STORAGE_KEY) ?? 'solana:devnet');
+    const [chain, setChain] = useState('solana:devnet');
+
+    // Load chain from localStorage after component mounts
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedChain = localStorage.getItem(STORAGE_KEY);
+            if (savedChain) {
+                setChain(savedChain);
+            }
+        }
+    }, []);
     const contextValue = useMemo<ChainContext>(() => {
         switch (chain) {
             case 'solana:mainnet':
@@ -33,7 +43,9 @@ export function ChainContextProvider({ children }: { children: React.ReactNode }
             case 'solana:devnet':
             default:
                 if (chain !== 'solana:devnet') {
-                    localStorage.removeItem(STORAGE_KEY);
+                    if (typeof window !== 'undefined') {
+                        localStorage.removeItem(STORAGE_KEY);
+                    }
                     console.error(`Unrecognized chain \`${chain}\``);
                 }
                 return DEFAULT_CHAIN_CONFIG;
@@ -45,7 +57,9 @@ export function ChainContextProvider({ children }: { children: React.ReactNode }
                 () => ({
                     ...contextValue,
                     setChain(chain) {
-                        localStorage.setItem(STORAGE_KEY, chain);
+                        if (typeof window !== 'undefined') {
+                            localStorage.setItem(STORAGE_KEY, chain);
+                        }
                         setChain(chain);
                     },
                 }),
