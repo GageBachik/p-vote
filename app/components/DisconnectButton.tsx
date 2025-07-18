@@ -15,14 +15,14 @@ export function DisconnectButton({
     ...buttonProps
 }: Omit<React.ComponentProps<typeof Button>, 'color' | 'loading' | 'onClick'> & Props) {
     const [isDisconnecting, disconnect] = useDisconnect(wallet);
-    const [lastError, setLastError] = useState(NO_ERROR);
+    const [lastError, setLastError] = useState<typeof NO_ERROR | unknown>(NO_ERROR);
     return (
         <Tooltip
             content={
                 <>
                     Error:{' '}
                     {lastError && typeof lastError === 'object' && 'message' in lastError
-                        ? lastError.message
+                        ? (lastError as { message: string }).message
                         : String(lastError)}
                 </>
             }
