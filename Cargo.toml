@@ -21,7 +21,7 @@ pinocchio-associated-token-account =  { git = "https://github.com/anza-xyz/pinoc
 shank = { version = "0.4.2" }
 bs58 = "0.5.1"
 spl-token = "8.0.0"
-spl-associated-token-account = "7.0.0"
+spl-associated-token-account = {version = "7.0.0", features = ["no-entrypoint"]}
 
 [dev-dependencies]
 mollusk-svm = "0.4.0"
