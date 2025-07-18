@@ -1,11 +1,12 @@
 "use client";
 
 import { useContext } from "react";
-import { Wifi, Database, Terminal } from "lucide-react";
+import { Wifi, Terminal } from "lucide-react";
 import { SelectedWalletAccountContext } from "../../context/SelectedWalletAccountContext";
 import { Terminal as CyberTerminal } from "./Terminal";
 import { GlitchText } from "./GlitchText";
 import { CyberButton } from "./CyberButton";
+import { CyberBalance } from "./CyberBalance";
 
 export function DegenHeader() {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
@@ -37,11 +38,9 @@ export function DegenHeader() {
                 </div>
               )}
               
-              {/* <div className="flex items-center space-x-2 neon-border-cyan px-4 py-2 bg-cyber-dark">
-                <Database className="w-4 h-4 cyber-orange" />
-                <span className="font-bold cyber-orange text-lg">1,337</span>
-                <span className="text-xs cyber-yellow">$DEGEN</span>
-              </div> */}
+              {selectedWalletAccount && (
+                <CyberBalance account={selectedWalletAccount} />
+              )}
               
               <CyberButton variant="green">
                 [CREATE_VOTE]

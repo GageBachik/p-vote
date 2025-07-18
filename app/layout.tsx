@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Fira_Code, Oxanium } from "next/font/google";
 import "./globals.css";
-// import "@radix-ui/themes/styles.css";
 
 const firaCode = Fira_Code({
   variable: "--font-fira-code",
