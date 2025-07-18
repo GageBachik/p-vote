@@ -18,10 +18,11 @@ pinocchio-system = { git = "https://github.com/anza-xyz/pinocchio", branch = "ma
 pinocchio-log = { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
 pinocchio-token = { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
 pinocchio-associated-token-account =  { git = "https://github.com/anza-xyz/pinocchio", branch = "main" }
-shank = { version = "0.4.2" }
+shank = { version = "0.4.3-alpha.1", features = ["pinocchio"] }
 bs58 = "0.5.1"
 spl-token = "8.0.0"
 spl-associated-token-account = {version = "7.0.0", features = ["no-entrypoint"]}
+p-vote-client = { path = "clients/rust" }
 
 [dev-dependencies]
 mollusk-svm = "0.4.0"
