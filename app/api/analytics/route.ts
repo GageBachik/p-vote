@@ -1,33 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPlatformAnalytics } from '@/app/lib/db/analytics';
-import { getVoteStats } from '@/app/lib/db/votes';
-import { getTopVoters } from '@/app/lib/db/participants';
+import { getPlatformAnalyticsSimple } from '@/app/lib/db/analytics-simple';
 
 // GET /api/analytics - Get platform-wide analytics
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const daysBack = parseInt(searchParams.get('days_back') || '30');
-    const includeVoters = searchParams.get('include_voters') === 'true';
-
-    // Get platform analytics
-    const platformAnalytics = await getPlatformAnalytics(daysBack);
-    
-    // Get vote statistics
-    const voteStats = await getVoteStats();
-
-    let topVoters;
-    if (includeVoters) {
-      topVoters = await getTopVoters(10);
-    }
+    // Get simplified platform analytics that actually work
+    const platformAnalytics = await getPlatformAnalyticsSimple();
 
     return NextResponse.json({
       success: true,
       data: {
         platform: platformAnalytics,
-        vote_stats: voteStats,
-        top_voters: topVoters,
-        period_days: daysBack,
+        timestamp: new Date().toISOString(),
       },
     });
   } catch (error) {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { healthCheck } from '@/app/lib/db/connection';
 
 // GET /api/health - Health check endpoint
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const health = await healthCheck();
     

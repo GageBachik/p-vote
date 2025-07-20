@@ -15,10 +15,12 @@ import { ActiveVote } from "./components/cyberpunk/ActiveVote";
 import { VoteHistory } from "./components/cyberpunk/VoteHistory";
 import { useCyberpunkEffects } from "./components/cyberpunk/useCyberpunkEffects";
 import { CyberSignInMenu } from "./components/cyberpunk/CyberSignInMenu";
+import { ToastContainer, useToasts } from "./components/cyberpunk/Toast";
 
 function DegenVoteApp() {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const { toasts, addToast, removeToast } = useToasts();
   
   // Initialize cyberpunk effects
   useCyberpunkEffects();
@@ -29,7 +31,15 @@ function DegenVoteApp() {
       
       {selectedWalletAccount ? (
         <>
-          <DegenHeader />
+          <DegenHeader 
+            onVoteCreated={(voteId) => {
+              addToast({
+                type: 'success',
+                title: 'VOTE_CREATED_SUCCESSFULLY',
+                message: `Vote ID: ${voteId.slice(-8)}`
+              });
+            }}
+          />
           <main className="container mx-auto px-4">
             <ActiveVote />
             <VoteHistory />
@@ -67,6 +77,8 @@ function DegenVoteApp() {
         isOpen={isSignInModalOpen}
         onClose={() => setIsSignInModalOpen(false)}
       />
+
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
 } from '@/app/lib/db/votes';
 import { trackNewParticipant } from '@/app/lib/db/analytics';
 import type { CreateVoteData, VoteFilters, VotePaginationOptions } from '@/app/lib/db/types';
+import { isAddress } from '@solana/addresses';
 
 // GET /api/votes - List votes with filtering and pagination
 export async function GET(request: NextRequest) {
@@ -68,8 +69,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Validate pubkey format (basic check for 44 character base58)
-    if (body.vote_pubkey.length !== 44 || body.creator_pubkey.length !== 44) {
+      // Validate pubkey format (basic check for 44 character base58)
+      console.log("body", body)
+    // console.log('body.vote_pubkey', body.vote_pubkey, isAddress(body.vote_pubkey))
+    // console.log('body.creator_pubkey', body.voter_pubkey, isAddress(body.creator_pubkey))
+    if (!isAddress(body.vote_pubkey) || !isAddress(body.creator_pubkey)) {
       return NextResponse.json(
         { 
           success: false, 

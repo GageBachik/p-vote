@@ -7,6 +7,7 @@ import {
 import { getVoteById } from '@/app/lib/db/votes';
 import { trackNewParticipant } from '@/app/lib/db/analytics';
 import type { CreateParticipantData } from '@/app/lib/db/types';
+import { isAddress } from '@solana/addresses';
 
 // GET /api/votes/[id]/participants - Get participants for a vote
 export async function GET(
@@ -85,7 +86,8 @@ export async function POST(
     }
 
     // Validate pubkey format
-    if (body.voter_pubkey.length !== 44) {
+    // console.log("body.voter_pubkey", body.voter_pubkey, isAddress(body.voter_pubkey))
+    if (!isAddress(body.voter_pubkey)) {
       return NextResponse.json(
         { 
           success: false, 

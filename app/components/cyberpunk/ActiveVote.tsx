@@ -1,45 +1,68 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Cpu, Users } from "lucide-react";
+import { useState, useEffect, useContext } from "react";
+import { Cpu, Users, Loader2 } from "lucide-react";
 import { Terminal } from "./Terminal";
 import { GlitchText } from "./GlitchText";
 import { CyberButton } from "./CyberButton";
-
-interface VoteData {
-  id: number;
-  question: string;
-  yesVotes: number;
-  noVotes: number;
-  timeLeft: number; // in seconds
-  poolSize: number;
-  activeUsers: number;
-}
+import { SelectedWalletAccountContext } from "@/app/context/SelectedWalletAccountContext";
+import { useActiveVotes } from "@/app/hooks/useVotes";
+import { useParticipantCounts, submitVote, useHasUserVoted } from "@/app/hooks/useParticipants";
+import { useRealTimeStats, trackVoteView } from "@/app/hooks/useAnalytics";
+import { useSolanaVoting } from "@/app/hooks/useSolanaVoting";
+// import type { Vote } from "@/app/lib/db/types"; // Currently unused
 
 export function ActiveVote() {
+  const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const [flashHologram, setFlashHologram] = useState<boolean>(false);
-  const [voteData, setVoteData] = useState<VoteData>({
-    id: 420,
-    question: "PUMP $PEPE TO MOON?",
-    yesVotes: 1234,
-    noVotes: 567,
-    timeLeft: 2 * 3600 + 34 * 60 + 12, // 2h 34m 12s
-    poolSize: 1801,
-    activeUsers: 69
-  });
-
   const [voteMessage, setVoteMessage] = useState<string | null>(null);
+  const [voting, setVoting] = useState<boolean>(false);
+
+  // Fetch active vote data
+  const { votes: activeVotes, loading: votesLoading, error: votesError, refetch: refetchVotes } = useActiveVotes(1);
+  // console.log( activeVotes, votesLoading, votesError, refetchVotes);
+  const activeVote = activeVotes[0] || null;
+
+  // Fetch participant counts for active vote
+  const { counts, refetch: refetchCounts } = useParticipantCounts(activeVote?.id || '');
+  
+  // Check if user has voted (use mock address if no wallet)
+  const mockWalletAddress = 'E7pD4b6a3TKtP9w2xN1vR8sL5mJ3qY4nK6tF9cH8dA2';
+  const { hasVoted, refetch: refetchVotedStatus } = useHasUserVoted(
+    activeVote?.id || '', 
+    selectedWalletAccount?.address || mockWalletAddress
+  );
+
+  // Get real-time stats
+  const { stats } = useRealTimeStats(30000); // Update every 30 seconds
+
+  // Solana voting functions
+  const { castVote: castVoteOnChain } = useSolanaVoting();
+
+  // Track view when component loads and vote changes
+  useEffect(() => {
+    if (activeVote?.id) {
+      trackVoteView(activeVote.id);
+    }
+  }, [activeVote?.id]);
+
+  // Calculate time remaining
+  const [timeLeft, setTimeLeft] = useState<number>(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setVoteData(prev => ({
-        ...prev,
-        timeLeft: Math.max(0, prev.timeLeft - 1)
-      }));
-    }, 1000);
+    if (!activeVote?.blockchain_end_time) return;
 
+    const calculateTimeLeft = () => {
+      const endTime = new Date(activeVote.blockchain_end_time!).getTime();
+      const now = new Date().getTime();
+      const difference = Math.max(0, Math.floor((endTime - now) / 1000));
+      setTimeLeft(difference);
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [activeVote?.blockchain_end_time]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -48,23 +71,93 @@ export function ActiveVote() {
     return `${hours}h_${minutes}m_${secs}s`;
   };
 
-  const totalVotes = voteData.yesVotes + voteData.noVotes;
-  const yesPercentage = totalVotes > 0 ? (voteData.yesVotes / totalVotes) * 100 : 0;
-  const noPercentage = totalVotes > 0 ? (voteData.noVotes / totalVotes) * 100 : 0;
+  // Calculate vote percentages
+  const totalVotes = counts.total;
+  const yesPercentage = totalVotes > 0 ? (counts.yes / totalVotes) * 100 : 0;
+  const noPercentage = totalVotes > 0 ? (counts.no / totalVotes) * 100 : 0;
 
-  const handleVote = (_voteType: 'yes' | 'no') => {
-    setVoteMessage('>>> VOTE_EXECUTED_SUCCESSFULLY');
-    setFlashHologram(true);
-  
-    setTimeout(() => {
-      setVoteMessage(null);
-      setFlashHologram(false);
-    }, 200); // Effect lasts 1 second
+  const handleVote = async (voteType: 'yes' | 'no') => {
+    if (!selectedWalletAccount?.address || !activeVote?.id) return;
+    
+    setVoting(true);
+    try {
+      // Step 1: Cast vote on-chain
+      const onChainResult = await castVoteOnChain(
+        activeVote.vote_pubkey, 
+        voteType
+      );
+
+      if (!onChainResult.success) {
+        throw new Error(onChainResult.error || 'On-chain vote failed');
+      }
+
+      // Step 2: Record vote in database
+      const result = await submitVote(
+        activeVote.id,
+        selectedWalletAccount.address,
+        voteType,
+        1, // vote power
+        onChainResult.signature
+      );
+
+      if (result.success) {
+        setVoteMessage('>>> VOTE_EXECUTED_SUCCESSFULLY');
+        setFlashHologram(true);
+        
+        // Refresh data
+        await Promise.all([
+          refetchCounts(),
+          refetchVotedStatus(),
+          refetchVotes()
+        ]);
+      } else {
+        setVoteMessage(`>>> DATABASE_ERROR: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Vote failed:', error);
+      setVoteMessage(`>>> EXECUTION_FAILED: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setVoting(false);
+      setTimeout(() => {
+        setVoteMessage(null);
+        setFlashHologram(false);
+      }, 3000);
+    }
   };
+
+  // Loading state
+  if (votesLoading) {
+    return (
+      <Terminal 
+        header="LOADING_VOTE_DATA.exe - INITIALIZING..." 
+        className="mb-8"
+      >
+        <div className="p-8 text-center">
+          <Loader2 className="w-8 h-8 animate-spin cyber-cyan mx-auto mb-4" />
+          <p className="cyber-cyan">{">>> ACCESSING_BLOCKCHAIN_DATA..."}</p>
+        </div>
+      </Terminal>
+    );
+  }
+
+  // Error state
+  if (votesError || !activeVote) {
+    return (
+      <Terminal 
+        header="ERROR_404.exe - VOTE_NOT_FOUND" 
+        className="mb-8"
+      >
+        <div className="p-8 text-center">
+          <p className="cyber-pink mb-4">{">>> NO_ACTIVE_VOTES_DETECTED"}</p>
+          <p className="cyber-cyan text-sm">Check back later for new voting opportunities</p>
+        </div>
+      </Terminal>
+    );
+  }
 
   return (
     <Terminal 
-      header="ACTIVE_VOTE_SESSION_#420.exe - STATUS: LIVE" 
+      header={`ACTIVE_VOTE_SESSION_#${activeVote.id.slice(-6)}.exe - STATUS: ${activeVote.status?.toUpperCase()}`}
       className={`mb-8 ${flashHologram ? 'hologram-effect' : ''}`}
     >
       <div className="p-8">
@@ -74,19 +167,19 @@ export function ActiveVote() {
               {">>> LIVE_FEED"}
             </span>
             <span className="cyber-font text-xl font-bold cyber-cyan">
-              VOTE_ID: #{voteData.id}
+              VOTE_ID: #{activeVote.id.slice(-6)}
             </span>
           </div>
           <div className="neon-border-pink px-4 py-2 bg-cyber-darker">
             <span className="cyber-pink font-bold cyber-pulse">
-              ⏰ TIMEOUT: {formatTime(voteData.timeLeft)}
+              ⏰ TIMEOUT: {activeVote.blockchain_end_time ? formatTime(timeLeft) : 'NO_LIMIT'}
             </span>
           </div>
         </div>
         
         <h2 className="text-2xl md:text-4xl font-bold mb-8 text-center cyber-font">
           <GlitchText 
-            text={`QUERY: ${voteData.question}`} 
+            text={`QUERY: ${activeVote.title}`} 
             className="cyber-green"
           />
           <span className="cyber-orange ml-2">🚀</span>
@@ -103,7 +196,7 @@ export function ActiveVote() {
             <div className="p-6 text-center bg-cyber-dark">
               <div className="text-5xl mb-4 cyber-pulse">🚀</div>
               <div className="text-3xl font-bold mb-4 cyber-font cyber-green">YES</div>
-              <div className="text-4xl font-bold mb-4 cyber-green">{voteData.yesVotes.toLocaleString()}</div>
+              <div className="text-4xl font-bold mb-4 cyber-green">{counts.yes.toLocaleString()}</div>
               <div className="text-sm mb-6 cyber-cyan">$DEGEN_TOKENS ({yesPercentage.toFixed(1)}%)</div>
               
               {/* Cyber Progress Bar */}
@@ -118,8 +211,9 @@ export function ActiveVote() {
                 variant="green" 
                 className="w-full py-3 px-6"
                 onClick={() => handleVote('yes')}
+                disabled={voting || hasVoted || !selectedWalletAccount?.address}
               >
-                [EXECUTE_YES_VOTE]
+                {voting ? '[PROCESSING...]' : hasVoted ? '[ALREADY_VOTED]' : '[EXECUTE_YES_VOTE]'}
               </CyberButton>
               
               {voteMessage && (
@@ -139,7 +233,7 @@ export function ActiveVote() {
             <div className="p-6 text-center bg-cyber-dark">
               <div className="text-5xl mb-4 cyber-pulse">📉</div>
               <div className="text-3xl font-bold mb-4 cyber-font cyber-pink">NO</div>
-              <div className="text-4xl font-bold mb-4 cyber-pink">{voteData.noVotes.toLocaleString()}</div>
+              <div className="text-4xl font-bold mb-4 cyber-pink">{counts.no.toLocaleString()}</div>
               <div className="text-sm mb-6 cyber-cyan">$DEGEN_TOKENS ({noPercentage.toFixed(1)}%)</div>
               
               {/* Cyber Progress Bar */}
@@ -154,8 +248,9 @@ export function ActiveVote() {
                 variant="pink" 
                 className="w-full py-3 px-6"
                 onClick={() => handleVote('no')}
+                disabled={voting || hasVoted || !selectedWalletAccount?.address}
               >
-                [EXECUTE_NO_VOTE]
+                {voting ? '[PROCESSING...]' : hasVoted ? '[ALREADY_VOTED]' : '[EXECUTE_NO_VOTE]'}
               </CyberButton>
               
               {voteMessage && (
@@ -172,15 +267,22 @@ export function ActiveVote() {
           <div className="neon-border-cyan px-6 py-4 bg-cyber-darker">
             <div className="flex items-center space-x-2">
               <Cpu className="w-5 h-5 cyber-purple" />
-              <span className="font-bold cyber-cyan">POOL_SIZE: </span>
-              <span className="cyber-yellow font-bold">{voteData.poolSize.toLocaleString()}_$DEGEN</span>
+              <span className="font-bold cyber-cyan">TOTAL_VOTES: </span>
+              <span className="cyber-yellow font-bold">{totalVotes.toLocaleString()}</span>
             </div>
           </div>
           <div className="neon-border-cyan px-6 py-4 bg-cyber-darker">
             <div className="flex items-center space-x-2">
               <Users className="w-5 h-5 cyber-purple" />
-              <span className="font-bold cyber-cyan">ACTIVE_USERS: </span>
-              <span className="cyber-yellow font-bold">{voteData.activeUsers}</span>
+              <span className="font-bold cyber-cyan">PLATFORM_VOTES: </span>
+              <span className="cyber-yellow font-bold">{stats?.total_votes || 0}</span>
+            </div>
+          </div>
+          <div className="neon-border-cyan px-6 py-4 bg-cyber-darker">
+            <div className="flex items-center space-x-2">
+              <span className="cyber-purple">👁️</span>
+              <span className="font-bold cyber-cyan">VIEWS: </span>
+              <span className="cyber-yellow font-bold">{activeVote.view_count.toLocaleString()}</span>
             </div>
           </div>
         </div>

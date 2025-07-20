@@ -1,15 +1,21 @@
 "use client";
 
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { Wifi, Terminal } from "lucide-react";
 import { SelectedWalletAccountContext } from "../../context/SelectedWalletAccountContext";
 import { Terminal as CyberTerminal } from "./Terminal";
 import { GlitchText } from "./GlitchText";
 import { CyberButton } from "./CyberButton";
 import { CyberBalance } from "./CyberBalance";
+import { CreateVoteModal } from "./CreateVoteModal";
 
-export function DegenHeader() {
+interface DegenHeaderProps {
+  onVoteCreated?: (voteId: string) => void;
+}
+
+export function DegenHeader({ onVoteCreated }: DegenHeaderProps) {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -42,7 +48,11 @@ export function DegenHeader() {
                 <CyberBalance account={selectedWalletAccount} />
               )}
               
-              <CyberButton variant="green">
+              <CyberButton 
+                variant="green"
+                onClick={() => setIsCreateModalOpen(true)}
+                disabled={false}
+              >
                 [CREATE_VOTE]
               </CyberButton>
               
@@ -53,6 +63,17 @@ export function DegenHeader() {
           </div>
         </div>
       </CyberTerminal>
+
+      <CreateVoteModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onVoteCreated={(voteId) => {
+          console.log('Vote created:', voteId);
+          if (onVoteCreated) {
+            onVoteCreated(voteId);
+          }
+        }}
+      />
     </header>
   );
 }
