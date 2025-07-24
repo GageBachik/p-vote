@@ -6,8 +6,10 @@ import { CyberModal } from "./CyberModal";
 import { CyberButton } from "./CyberButton";
 import { Terminal } from "./Terminal";
 import { SelectedWalletAccountContext } from "@/app/context/SelectedWalletAccountContext";
+import { RpcContext } from "@/app/context/RpcContext";
 import { useSolanaVoting } from "@/app/hooks/useSolanaVoting";
-import { isAddress } from "gill";
+import { blockhash, isAddress } from "gill";
+import { RpcContextProvider } from "@/app/context/RpcContextProvider";
 
 interface CreateVoteModalProps {
   isOpen: boolean;
@@ -46,6 +48,7 @@ const DURATION_OPTIONS = [
 
 export function CreateVoteModal({ isOpen, onClose, onVoteCreated }: CreateVoteModalProps) {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
+  const {rpc } = useContext(RpcContext);
   const { getWalletTokens, createVoteTransaction, castVote } = useSolanaVoting();
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
@@ -132,12 +135,14 @@ export function CreateVoteModal({ isOpen, onClose, onVoteCreated }: CreateVoteMo
     setError(null);
 
     try {
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       // Step 1: Create on-chain vote
       const txResult = await createVoteTransaction({
         title: formData.title,
         description: formData.description,
         endTime: calculateEndTime(),
-        tokenMint: formData.selectedToken === 'SOL' ? undefined : formData.selectedToken
+        tokenMint: formData.selectedToken === 'SOL' ? undefined : formData.selectedToken,
+        blockhash: latestBlockhash.blockhash
       });
 
       if (!txResult.success) {

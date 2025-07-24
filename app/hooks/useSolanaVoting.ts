@@ -2,7 +2,7 @@
 
 import { useContext, useCallback } from 'react';
 import { SelectedWalletAccountContext } from '@/app/context/SelectedWalletAccountContext';
-import { generateKeyPairSigner, type KeyPairSigner } from "gill";
+import { address,type Blockhash, createTransaction, generateKeyPairSigner, type KeyPairSigner } from "gill";
 
 // Types for vote creation
 export interface CreateVoteParams {
@@ -10,6 +10,7 @@ export interface CreateVoteParams {
   description?: string;
   endTime: Date;
   tokenMint?: string; // null for SOL
+  blockhash: Blockhash;
 }
 
 export interface VoteTransactionResult {
@@ -74,18 +75,29 @@ export function useSolanaVoting() {
       // 4. Send transaction via wallet adapter
       // 5. Wait for confirmation
 
-      // Mock implementation for now
-      const signer = await generateKeyPairSigner();
-      const mockVotePubkey = `${signer.address}`;
-      const mockSignature = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // // Mock implementation for now
+      // const signer = await generateKeyPairSigner();
+      // const mockVotePubkey = `${signer.address}`;
+      // const mockSignature = `tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Simulate transaction delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // // Simulate transaction delay
+      // await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Random success/failure for testing
-      const success = Math.random() > 0.1; // 90% success rate
+      // // Random success/failure for testing
+      // const success = Math.random() > 0.1; // 90% success rate
+      generateKeyPairSigner()
+      const transaction = createTransaction({
+        version: "legacy",
+        feePayer: address(selectedWalletAccount.address),
+        instructions: [
+  
+        ],
+        // blockhash,
+        computeUnitLimit: 5000,
+        computeUnitPrice: 1000,
+      });
 
-      if (!success) {
+      if (!transaction) {
         return {
           success: false,
           error: 'Transaction failed on-chain'
