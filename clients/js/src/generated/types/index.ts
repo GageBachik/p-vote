@@ -6,10 +6,4 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from './initializePlatformInstructionData';
-export * from './initializePositionInstructionData';
-export * from './initializeVoteInstructionData';
 export * from './pTokenProgramError';
-export * from './redeemWinningsInstructionData';
-export * from './updatePlatformInstructionData';
-export * from './updatesPositionInstructionData';

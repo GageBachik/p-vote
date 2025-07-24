@@ -11,7 +11,6 @@ use pinocchio::{
 use pinocchio::sysvars::clock::Clock;
 use pinocchio_pubkey::derive_address;
 use pinocchio_token::instructions::Transfer;
-use shank::ShankType;
 
 use crate::{
     state::{Platform, Position, Vote, PLATFORM_SEED, POSITION_SEED},
@@ -113,7 +112,7 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePositionAccounts<'info> 
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable, ShankType)]
+#[derive(Clone, Copy, Pod, Zeroable)]
 pub struct InitializePositionInstructionData {
     pub amount: [u8; 8],
     pub side: u8,

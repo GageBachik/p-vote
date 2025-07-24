@@ -1,18 +1,12 @@
 use bytemuck::{Pod, Zeroable};
 use pinocchio::{
-    account_info::AccountInfo,
-    program_error::ProgramError,
-    pubkey,
-    sysvars::{rent::Rent, Sysvar},
-    ProgramResult,
+    account_info::AccountInfo, cpi::invoke, instruction::{AccountMeta, Instruction}, program_error::ProgramError, pubkey, sysvars::{rent::Rent, Sysvar}, ProgramResult
 };
 
 use pinocchio::sysvars::clock::Clock;
 use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
 use pinocchio_system::instructions::Transfer;
-use pinocchio_token::{instructions::InitializeAccount3, state::TokenAccount};
-use shank::ShankType;
 
 use crate::{
     state::{Platform, Vote, PLATFORM_SEED},
@@ -29,13 +23,16 @@ pub struct InitializeVoteAccounts<'info> {
     pub token: &'info AccountInfo,
     pub vote_vault: &'info AccountInfo,
     pub vote_vault_token_account: &'info AccountInfo,
+    pub rent: &'info AccountInfo,
+    pub system_program: &'info AccountInfo,
+    pub token_program: &'info AccountInfo,
 }
 
 impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
     type Error = ProgramError;
 
     fn try_from(accounts: &'info [AccountInfo]) -> Result<Self, Self::Error> {
-        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, ..] =
+        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, rent, system_program, token_program, ..] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -104,12 +101,15 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
             token,
             vote_vault,
             vote_vault_token_account,
+            rent,
+            system_program,
+            token_program
         })
     }
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable, ShankType)]
+#[derive(Clone, Copy, Pod, Zeroable)]
 pub struct InitializeVoteInstructionData {
     pub time_to_add: [u8; 8],
 }
@@ -201,24 +201,32 @@ impl<'info> InitializeVote<'info> {
             owner: &crate::ID,
         }
         .invoke()?;
+        log!("the vote account was made");
 
-        // Initialize the vote vault associated token account
-        pinocchio_system::instructions::CreateAccount {
-            from: self.accounts.authority,
-            to: self.accounts.vote_vault_token_account,
-            space: TokenAccount::LEN as u64,
-            lamports: Rent::get()?.minimum_balance(TokenAccount::LEN),
-            owner: &pinocchio_token::ID,
-        }
-        .invoke()?;
+        let create_ata_account_infos = [
+            self.accounts.authority,
+            self.accounts.vote_vault_token_account,
+            self.accounts.vote_vault,
+            self.accounts.token,
+            self.accounts.system_program,
+            self.accounts.token_program,
+        ];
+        let create_ata_account_metas = [
+            AccountMeta::new( self.accounts.authority.key(), true, true),
+            AccountMeta::new( self.accounts.vote_vault_token_account.key(), true, false),
+            AccountMeta::readonly(self.accounts.vote_vault.key()),
+            AccountMeta::readonly(self.accounts.token.key()),
+            AccountMeta::readonly(self.accounts.system_program.key()),
+            AccountMeta::readonly(self.accounts.token_program.key()),
+        ];
+        let create_ata_ix = Instruction {
+            program_id: &pinocchio_associated_token_account::ID,
+            accounts: &create_ata_account_metas,
+            data: &[0]
+        };
 
-        // Initialize the Associated Token Account
-        InitializeAccount3 {
-            account: self.accounts.vote_vault_token_account,
-            mint: self.accounts.token,
-            owner: self.accounts.vote_vault.key(),
-        }
-        .invoke()?;
+        invoke(&create_ata_ix, &create_ata_account_infos)?;
+        log!("the ata was made");
 
         // set vote account data
         let mut vote = self.accounts.vote.clone();

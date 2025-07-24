@@ -1,0 +1,15 @@
+################################################################
+# Manage p-vote deployment through Crypto Infrastructure as Code
+################################################################
+
+addon "svm" {
+    rpc_api_url = input.rpc_api_url
+    network_id = input.network_id
+}
+
+action "deploy_p_vote" "svm::deploy_program" {
+    description = "Deploy p_vote program"
+    program = svm::get_program_from_native_project("p_vote") 
+    authority = signer.authority
+    payer = signer.payer
+}

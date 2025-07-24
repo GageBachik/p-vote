@@ -9,5 +9,4 @@
 export * from './accounts';
 export * from './instructions';
 export * from './programs';
-// @ts-expect-error wont ever use the types from instructions
 export * from './types';

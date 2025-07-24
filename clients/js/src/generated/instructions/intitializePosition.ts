@@ -8,12 +8,17 @@
 
 import {
   combineCodec,
+  fixDecoderSize,
+  fixEncoderSize,
+  getBytesDecoder,
+  getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
   type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type FixedSizeCodec,
   type FixedSizeDecoder,
@@ -21,9 +26,14 @@ import {
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
+  type ReadonlyAccount,
   type ReadonlyUint8Array,
+  type TransactionSigner,
+  type WritableAccount,
+  type WritableSignerAccount,
 } from 'gill';
 import { P_VOTE_PROGRAM_ADDRESS } from '../programs';
+import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const INTITIALIZE_POSITION_DISCRIMINATOR = 3;
 
@@ -33,24 +43,96 @@ export function getIntitializePositionDiscriminatorBytes() {
 
 export type IntitializePositionInstruction<
   TProgram extends string = typeof P_VOTE_PROGRAM_ADDRESS,
+  TAccountAuthority extends string | AccountMeta<string> = string,
+  TAccountPlatform extends string | AccountMeta<string> = string,
+  TAccountVault extends string | AccountMeta<string> = string,
+  TAccountVote extends string | AccountMeta<string> = string,
+  TAccountToken extends string | AccountMeta<string> = string,
+  TAccountVoteVault extends string | AccountMeta<string> = string,
+  TAccountVoteVaultTokenAccount extends string | AccountMeta<string> = string,
+  TAccountAuthorityTokenAccount extends string | AccountMeta<string> = string,
+  TAccountVaultTokenAccount extends string | AccountMeta<string> = string,
+  TAccountPosition extends string | AccountMeta<string> = string,
+  TAccountRent extends
+    | string
+    | AccountMeta<string> = 'SysvarRent111111111111111111111111111111111',
+  TAccountSystemProgram extends
+    | string
+    | AccountMeta<string> = '11111111111111111111111111111111',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
-  InstructionWithAccounts<TRemainingAccounts>;
+  InstructionWithAccounts<
+    [
+      TAccountAuthority extends string
+        ? WritableSignerAccount<TAccountAuthority> &
+            AccountSignerMeta<TAccountAuthority>
+        : TAccountAuthority,
+      TAccountPlatform extends string
+        ? ReadonlyAccount<TAccountPlatform>
+        : TAccountPlatform,
+      TAccountVault extends string
+        ? ReadonlyAccount<TAccountVault>
+        : TAccountVault,
+      TAccountVote extends string
+        ? WritableAccount<TAccountVote>
+        : TAccountVote,
+      TAccountToken extends string
+        ? ReadonlyAccount<TAccountToken>
+        : TAccountToken,
+      TAccountVoteVault extends string
+        ? ReadonlyAccount<TAccountVoteVault>
+        : TAccountVoteVault,
+      TAccountVoteVaultTokenAccount extends string
+        ? WritableAccount<TAccountVoteVaultTokenAccount>
+        : TAccountVoteVaultTokenAccount,
+      TAccountAuthorityTokenAccount extends string
+        ? WritableAccount<TAccountAuthorityTokenAccount>
+        : TAccountAuthorityTokenAccount,
+      TAccountVaultTokenAccount extends string
+        ? WritableAccount<TAccountVaultTokenAccount>
+        : TAccountVaultTokenAccount,
+      TAccountPosition extends string
+        ? WritableAccount<TAccountPosition>
+        : TAccountPosition,
+      TAccountRent extends string
+        ? ReadonlyAccount<TAccountRent>
+        : TAccountRent,
+      TAccountSystemProgram extends string
+        ? ReadonlyAccount<TAccountSystemProgram>
+        : TAccountSystemProgram,
+      ...TRemainingAccounts,
+    ]
+  >;
 
-export type IntitializePositionInstructionData = { discriminator: number };
+export type IntitializePositionInstructionData = {
+  discriminator: number;
+  amount: ReadonlyUint8Array;
+  side: number;
+};
 
-export type IntitializePositionInstructionDataArgs = {};
+export type IntitializePositionInstructionDataArgs = {
+  amount: ReadonlyUint8Array;
+  side: number;
+};
 
 export function getIntitializePositionInstructionDataEncoder(): FixedSizeEncoder<IntitializePositionInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([['discriminator', getU8Encoder()]]),
+    getStructEncoder([
+      ['discriminator', getU8Encoder()],
+      ['amount', fixEncoderSize(getBytesEncoder(), 8)],
+      ['side', getU8Encoder()],
+    ]),
     (value) => ({ ...value, discriminator: INTITIALIZE_POSITION_DISCRIMINATOR })
   );
 }
 
 export function getIntitializePositionInstructionDataDecoder(): FixedSizeDecoder<IntitializePositionInstructionData> {
-  return getStructDecoder([['discriminator', getU8Decoder()]]);
+  return getStructDecoder([
+    ['discriminator', getU8Decoder()],
+    ['amount', fixDecoderSize(getBytesDecoder(), 8)],
+    ['side', getU8Decoder()],
+  ]);
 }
 
 export function getIntitializePositionInstructionDataCodec(): FixedSizeCodec<
@@ -63,36 +145,245 @@ export function getIntitializePositionInstructionDataCodec(): FixedSizeCodec<
   );
 }
 
-export type IntitializePositionInput = {};
+export type IntitializePositionInput<
+  TAccountAuthority extends string = string,
+  TAccountPlatform extends string = string,
+  TAccountVault extends string = string,
+  TAccountVote extends string = string,
+  TAccountToken extends string = string,
+  TAccountVoteVault extends string = string,
+  TAccountVoteVaultTokenAccount extends string = string,
+  TAccountAuthorityTokenAccount extends string = string,
+  TAccountVaultTokenAccount extends string = string,
+  TAccountPosition extends string = string,
+  TAccountRent extends string = string,
+  TAccountSystemProgram extends string = string,
+> = {
+  /** Authority of the vault */
+  authority: TransactionSigner<TAccountAuthority>;
+  /** Platform pda key */
+  platform: Address<TAccountPlatform>;
+  /** platforms fee vault pda */
+  vault: Address<TAccountVault>;
+  /** vote account */
+  vote: Address<TAccountVote>;
+  /** vote token */
+  token: Address<TAccountToken>;
+  /** votes vault pda */
+  voteVault: Address<TAccountVoteVault>;
+  /** votes token account for storing funds */
+  voteVaultTokenAccount: Address<TAccountVoteVaultTokenAccount>;
+  /** authorities token account for storing funds */
+  authorityTokenAccount: Address<TAccountAuthorityTokenAccount>;
+  /** vault token account for storing funds */
+  vaultTokenAccount: Address<TAccountVaultTokenAccount>;
+  /** position pda for voting on one side */
+  position: Address<TAccountPosition>;
+  /** Rent program */
+  rent?: Address<TAccountRent>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  amount: IntitializePositionInstructionDataArgs['amount'];
+  side: IntitializePositionInstructionDataArgs['side'];
+};
 
 export function getIntitializePositionInstruction<
+  TAccountAuthority extends string,
+  TAccountPlatform extends string,
+  TAccountVault extends string,
+  TAccountVote extends string,
+  TAccountToken extends string,
+  TAccountVoteVault extends string,
+  TAccountVoteVaultTokenAccount extends string,
+  TAccountAuthorityTokenAccount extends string,
+  TAccountVaultTokenAccount extends string,
+  TAccountPosition extends string,
+  TAccountRent extends string,
+  TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof P_VOTE_PROGRAM_ADDRESS,
->(config?: {
-  programAddress?: TProgramAddress;
-}): IntitializePositionInstruction<TProgramAddress> {
+>(
+  input: IntitializePositionInput<
+    TAccountAuthority,
+    TAccountPlatform,
+    TAccountVault,
+    TAccountVote,
+    TAccountToken,
+    TAccountVoteVault,
+    TAccountVoteVaultTokenAccount,
+    TAccountAuthorityTokenAccount,
+    TAccountVaultTokenAccount,
+    TAccountPosition,
+    TAccountRent,
+    TAccountSystemProgram
+  >,
+  config?: { programAddress?: TProgramAddress }
+): IntitializePositionInstruction<
+  TProgramAddress,
+  TAccountAuthority,
+  TAccountPlatform,
+  TAccountVault,
+  TAccountVote,
+  TAccountToken,
+  TAccountVoteVault,
+  TAccountVoteVaultTokenAccount,
+  TAccountAuthorityTokenAccount,
+  TAccountVaultTokenAccount,
+  TAccountPosition,
+  TAccountRent,
+  TAccountSystemProgram
+> {
   // Program address.
   const programAddress = config?.programAddress ?? P_VOTE_PROGRAM_ADDRESS;
 
+  // Original accounts.
+  const originalAccounts = {
+    authority: { value: input.authority ?? null, isWritable: true },
+    platform: { value: input.platform ?? null, isWritable: false },
+    vault: { value: input.vault ?? null, isWritable: false },
+    vote: { value: input.vote ?? null, isWritable: true },
+    token: { value: input.token ?? null, isWritable: false },
+    voteVault: { value: input.voteVault ?? null, isWritable: false },
+    voteVaultTokenAccount: {
+      value: input.voteVaultTokenAccount ?? null,
+      isWritable: true,
+    },
+    authorityTokenAccount: {
+      value: input.authorityTokenAccount ?? null,
+      isWritable: true,
+    },
+    vaultTokenAccount: {
+      value: input.vaultTokenAccount ?? null,
+      isWritable: true,
+    },
+    position: { value: input.position ?? null, isWritable: true },
+    rent: { value: input.rent ?? null, isWritable: false },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Original args.
+  const args = { ...input };
+
+  // Resolve default values.
+  if (!accounts.rent.value) {
+    accounts.rent.value =
+      'SysvarRent111111111111111111111111111111111' as Address<'SysvarRent111111111111111111111111111111111'>;
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
+    accounts: [
+      getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.platform),
+      getAccountMeta(accounts.vault),
+      getAccountMeta(accounts.vote),
+      getAccountMeta(accounts.token),
+      getAccountMeta(accounts.voteVault),
+      getAccountMeta(accounts.voteVaultTokenAccount),
+      getAccountMeta(accounts.authorityTokenAccount),
+      getAccountMeta(accounts.vaultTokenAccount),
+      getAccountMeta(accounts.position),
+      getAccountMeta(accounts.rent),
+      getAccountMeta(accounts.systemProgram),
+    ],
     programAddress,
-    data: getIntitializePositionInstructionDataEncoder().encode({}),
-  } as IntitializePositionInstruction<TProgramAddress>;
+    data: getIntitializePositionInstructionDataEncoder().encode(
+      args as IntitializePositionInstructionDataArgs
+    ),
+  } as IntitializePositionInstruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountPlatform,
+    TAccountVault,
+    TAccountVote,
+    TAccountToken,
+    TAccountVoteVault,
+    TAccountVoteVaultTokenAccount,
+    TAccountAuthorityTokenAccount,
+    TAccountVaultTokenAccount,
+    TAccountPosition,
+    TAccountRent,
+    TAccountSystemProgram
+  >;
 
   return instruction;
 }
 
 export type ParsedIntitializePositionInstruction<
   TProgram extends string = typeof P_VOTE_PROGRAM_ADDRESS,
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
+  accounts: {
+    /** Authority of the vault */
+    authority: TAccountMetas[0];
+    /** Platform pda key */
+    platform: TAccountMetas[1];
+    /** platforms fee vault pda */
+    vault: TAccountMetas[2];
+    /** vote account */
+    vote: TAccountMetas[3];
+    /** vote token */
+    token: TAccountMetas[4];
+    /** votes vault pda */
+    voteVault: TAccountMetas[5];
+    /** votes token account for storing funds */
+    voteVaultTokenAccount: TAccountMetas[6];
+    /** authorities token account for storing funds */
+    authorityTokenAccount: TAccountMetas[7];
+    /** vault token account for storing funds */
+    vaultTokenAccount: TAccountMetas[8];
+    /** position pda for voting on one side */
+    position: TAccountMetas[9];
+    /** Rent program */
+    rent: TAccountMetas[10];
+    /** System program */
+    systemProgram: TAccountMetas[11];
+  };
   data: IntitializePositionInstructionData;
 };
 
-export function parseIntitializePositionInstruction<TProgram extends string>(
-  instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>
-): ParsedIntitializePositionInstruction<TProgram> {
+export function parseIntitializePositionInstruction<
+  TProgram extends string,
+  TAccountMetas extends readonly AccountMeta[],
+>(
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
+): ParsedIntitializePositionInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 12) {
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
+  }
+  let accountIndex = 0;
+  const getNextAccount = () => {
+    const accountMeta = instruction.accounts![accountIndex]!;
+    accountIndex += 1;
+    return accountMeta;
+  };
   return {
     programAddress: instruction.programAddress,
+    accounts: {
+      authority: getNextAccount(),
+      platform: getNextAccount(),
+      vault: getNextAccount(),
+      vote: getNextAccount(),
+      token: getNextAccount(),
+      voteVault: getNextAccount(),
+      voteVaultTokenAccount: getNextAccount(),
+      authorityTokenAccount: getNextAccount(),
+      vaultTokenAccount: getNextAccount(),
+      position: getNextAccount(),
+      rent: getNextAccount(),
+      systemProgram: getNextAccount(),
+    },
     data: getIntitializePositionInstructionDataDecoder().decode(
       instruction.data
     ),

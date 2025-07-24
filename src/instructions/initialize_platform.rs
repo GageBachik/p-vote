@@ -8,7 +8,6 @@ use pinocchio::{
 };
 
 use pinocchio_system::instructions::Transfer;
-use shank::ShankType;
 
 use crate::state::{Platform, PLATFORM_SEED};
 
@@ -60,7 +59,7 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePlatformAccounts<'info> 
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable, ShankType)]
+#[derive(Clone, Copy, Pod, Zeroable)]
 pub struct InitializePlatformInstructionData {
     pub fee: [u8; 2],
     pub platform_bump: u8,

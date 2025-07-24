@@ -12,12 +12,12 @@ import {
   import { Suspense, useContext } from "react";
   import { ErrorBoundary } from "react-error-boundary";
   
-  import { Balance } from "../components/Balance";
-  import { FeatureNotSupportedCallout } from "../components/FeatureNotSupportedCallout";
-  import { FeaturePanel } from "../components/FeaturePanel";
-  import { SolanaSignAndSendTransactionFeaturePanel } from "../components/SolanaSignAndSendTransactionFeaturePanel";
-  import { SolanaSignMessageFeaturePanel } from "../components/SolanaSignMessageFeaturePanel";
-  import { WalletAccountIcon } from "../components/WalletAccountIcon";
+  import { Balance } from "./Balance";
+  import { FeatureNotSupportedCallout } from "./FeatureNotSupportedCallout";
+  import { FeaturePanel } from "./FeaturePanel";
+  import { SolanaSignAndSendTransactionFeaturePanel } from "./SolanaSignAndSendTransactionFeaturePanel";
+  import { SolanaSignMessageFeaturePanel } from "./SolanaSignMessageFeaturePanel";
+  import { WalletAccountIcon } from "./WalletAccountIcon";
   import { ChainContext } from "../context/ChainContext";
   import { SelectedWalletAccountContext } from "../context/SelectedWalletAccountContext";
   

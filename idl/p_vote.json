@@ -4,8 +4,67 @@
   "instructions": [
     {
       "name": "InitializePlatform",
-      "accounts": [],
-      "args": [],
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Authority of the vault"
+          ]
+        },
+        {
+          "name": "platform",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Platform pda key"
+          ]
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "platforms fee vault pda"
+          ]
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Rent program"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "fee",
+          "type": {
+            "array": [
+              "u8",
+              2
+            ]
+          }
+        },
+        {
+          "name": "platformBump",
+          "type": "u8"
+        },
+        {
+          "name": "vaultBump",
+          "type": "u8"
+        }
+      ],
       "discriminant": {
         "type": "u8",
         "value": 0
@@ -13,8 +72,59 @@
     },
     {
       "name": "UpdatePlatform",
-      "accounts": [],
-      "args": [],
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Authority of the vault"
+          ]
+        },
+        {
+          "name": "platform",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "Platform pda key"
+          ]
+        },
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "platforms fee vault pda"
+          ]
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Rent program"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "newFee",
+          "type": {
+            "array": [
+              "u8",
+              2
+            ]
+          }
+        }
+      ],
       "discriminant": {
         "type": "u8",
         "value": 1
@@ -22,8 +132,99 @@
     },
     {
       "name": "InitializeVote",
-      "accounts": [],
-      "args": [],
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Authority of the vault"
+          ]
+        },
+        {
+          "name": "platform",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Platform pda key"
+          ]
+        },
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "platforms fee vault pda"
+          ]
+        },
+        {
+          "name": "vote",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "new vote account"
+          ]
+        },
+        {
+          "name": "token",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "vote token"
+          ]
+        },
+        {
+          "name": "voteVault",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "votes vault pda"
+          ]
+        },
+        {
+          "name": "voteVaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "votes token account for storing funds"
+          ]
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Rent program"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Token program"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "timeToAdd",
+          "type": {
+            "array": [
+              "u8",
+              8
+            ]
+          }
+        }
+      ],
       "discriminant": {
         "type": "u8",
         "value": 2
@@ -31,8 +232,119 @@
     },
     {
       "name": "IntitializePosition",
-      "accounts": [],
-      "args": [],
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Authority of the vault"
+          ]
+        },
+        {
+          "name": "platform",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Platform pda key"
+          ]
+        },
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "platforms fee vault pda"
+          ]
+        },
+        {
+          "name": "vote",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "vote account"
+          ]
+        },
+        {
+          "name": "token",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "vote token"
+          ]
+        },
+        {
+          "name": "voteVault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "votes vault pda"
+          ]
+        },
+        {
+          "name": "voteVaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "votes token account for storing funds"
+          ]
+        },
+        {
+          "name": "authorityTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "authorities token account for storing funds"
+          ]
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "vault token account for storing funds"
+          ]
+        },
+        {
+          "name": "position",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "position pda for voting on one side"
+          ]
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Rent program"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": {
+            "array": [
+              "u8",
+              8
+            ]
+          }
+        },
+        {
+          "name": "side",
+          "type": "u8"
+        }
+      ],
       "discriminant": {
         "type": "u8",
         "value": 3
@@ -40,8 +352,115 @@
     },
     {
       "name": "UpdatePosition",
-      "accounts": [],
-      "args": [],
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Authority of the vault"
+          ]
+        },
+        {
+          "name": "platform",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Platform pda key"
+          ]
+        },
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "platforms fee vault pda"
+          ]
+        },
+        {
+          "name": "vote",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "vote account"
+          ]
+        },
+        {
+          "name": "token",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "vote token"
+          ]
+        },
+        {
+          "name": "voteVault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "votes vault pda"
+          ]
+        },
+        {
+          "name": "voteVaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "votes token account for storing funds"
+          ]
+        },
+        {
+          "name": "authorityTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "authorities token account for storing funds"
+          ]
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "vault token account for storing funds"
+          ]
+        },
+        {
+          "name": "position",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "position pda for voting on one side"
+          ]
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Rent program"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": {
+            "array": [
+              "u8",
+              8
+            ]
+          }
+        }
+      ],
       "discriminant": {
         "type": "u8",
         "value": 4
@@ -49,7 +468,104 @@
     },
     {
       "name": "RedeemWinnings",
-      "accounts": [],
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true,
+          "docs": [
+            "Authority of the vault"
+          ]
+        },
+        {
+          "name": "platform",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Platform pda key"
+          ]
+        },
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "platforms fee vault pda"
+          ]
+        },
+        {
+          "name": "vote",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "vote account"
+          ]
+        },
+        {
+          "name": "token",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "vote token"
+          ]
+        },
+        {
+          "name": "voteVault",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "votes vault pda"
+          ]
+        },
+        {
+          "name": "voteVaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "votes token account for storing funds"
+          ]
+        },
+        {
+          "name": "authorityTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "authorities token account for storing funds"
+          ]
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "vault token account for storing funds"
+          ]
+        },
+        {
+          "name": "position",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "position pda for voting on one side"
+          ]
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Rent program"
+          ]
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "System program"
+          ]
+        }
+      ],
       "args": [],
       "discriminant": {
         "type": "u8",
@@ -158,110 +674,6 @@
   ],
   "types": [
     {
-      "name": "InitializePlatformInstructionData",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "fee",
-            "type": {
-              "array": [
-                "u8",
-                2
-              ]
-            }
-          },
-          {
-            "name": "platformBump",
-            "type": "u8"
-          },
-          {
-            "name": "vaultBump",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "InitializePositionInstructionData",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": {
-              "array": [
-                "u8",
-                8
-              ]
-            }
-          },
-          {
-            "name": "side",
-            "type": "u8"
-          }
-        ]
-      }
-    },
-    {
-      "name": "InitializeVoteInstructionData",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "timeToAdd",
-            "type": {
-              "array": [
-                "u8",
-                8
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "RedeemWinningsInstructionData",
-      "type": {
-        "kind": "struct",
-        "fields": []
-      }
-    },
-    {
-      "name": "UpdatePlatformInstructionData",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "newFee",
-            "type": {
-              "array": [
-                "u8",
-                2
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "UpdatesPositionInstructionData",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "amount",
-            "type": {
-              "array": [
-                "u8",
-                8
-              ]
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "PTokenProgramError",
       "type": {
         "kind": "enum",
@@ -302,6 +714,6 @@
   ],
   "metadata": {
     "origin": "shank",
-    "address": "2YwymitHUGW6vwk66cZpVoq5oGD31Ziz41UNokMBrKeY"
+    "address": "pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu"
   }
 }

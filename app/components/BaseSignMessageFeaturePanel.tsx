@@ -7,7 +7,7 @@ import type { ReadonlyUint8Array } from '@wallet-standard/core';
 import type { SyntheticEvent } from 'react';
 import { useRef, useState } from 'react';
 
-import { ErrorDialog } from '../components/ErrorDialog';
+import { ErrorDialog } from './ErrorDialog';
 
 type Props = Readonly<{
     signMessage(message: ReadonlyUint8Array): Promise<ReadonlyUint8Array>;

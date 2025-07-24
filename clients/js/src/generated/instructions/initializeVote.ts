@@ -8,12 +8,17 @@
 
 import {
   combineCodec,
+  fixDecoderSize,
+  fixEncoderSize,
+  getBytesDecoder,
+  getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
   type AccountMeta,
+  type AccountSignerMeta,
   type Address,
   type FixedSizeCodec,
   type FixedSizeDecoder,
@@ -21,9 +26,14 @@ import {
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
+  type ReadonlyAccount,
   type ReadonlyUint8Array,
+  type TransactionSigner,
+  type WritableAccount,
+  type WritableSignerAccount,
 } from 'gill';
 import { P_VOTE_PROGRAM_ADDRESS } from '../programs';
+import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 
 export const INITIALIZE_VOTE_DISCRIMINATOR = 2;
 
@@ -33,24 +43,86 @@ export function getInitializeVoteDiscriminatorBytes() {
 
 export type InitializeVoteInstruction<
   TProgram extends string = typeof P_VOTE_PROGRAM_ADDRESS,
+  TAccountAuthority extends string | AccountMeta<string> = string,
+  TAccountPlatform extends string | AccountMeta<string> = string,
+  TAccountVault extends string | AccountMeta<string> = string,
+  TAccountVote extends string | AccountMeta<string> = string,
+  TAccountToken extends string | AccountMeta<string> = string,
+  TAccountVoteVault extends string | AccountMeta<string> = string,
+  TAccountVoteVaultTokenAccount extends string | AccountMeta<string> = string,
+  TAccountRent extends
+    | string
+    | AccountMeta<string> = 'SysvarRent111111111111111111111111111111111',
+  TAccountSystemProgram extends
+    | string
+    | AccountMeta<string> = '11111111111111111111111111111111',
+  TAccountTokenProgram extends
+    | string
+    | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
-  InstructionWithAccounts<TRemainingAccounts>;
+  InstructionWithAccounts<
+    [
+      TAccountAuthority extends string
+        ? WritableSignerAccount<TAccountAuthority> &
+            AccountSignerMeta<TAccountAuthority>
+        : TAccountAuthority,
+      TAccountPlatform extends string
+        ? ReadonlyAccount<TAccountPlatform>
+        : TAccountPlatform,
+      TAccountVault extends string
+        ? ReadonlyAccount<TAccountVault>
+        : TAccountVault,
+      TAccountVote extends string
+        ? WritableSignerAccount<TAccountVote> & AccountSignerMeta<TAccountVote>
+        : TAccountVote,
+      TAccountToken extends string
+        ? ReadonlyAccount<TAccountToken>
+        : TAccountToken,
+      TAccountVoteVault extends string
+        ? WritableAccount<TAccountVoteVault>
+        : TAccountVoteVault,
+      TAccountVoteVaultTokenAccount extends string
+        ? WritableAccount<TAccountVoteVaultTokenAccount>
+        : TAccountVoteVaultTokenAccount,
+      TAccountRent extends string
+        ? ReadonlyAccount<TAccountRent>
+        : TAccountRent,
+      TAccountSystemProgram extends string
+        ? ReadonlyAccount<TAccountSystemProgram>
+        : TAccountSystemProgram,
+      TAccountTokenProgram extends string
+        ? ReadonlyAccount<TAccountTokenProgram>
+        : TAccountTokenProgram,
+      ...TRemainingAccounts,
+    ]
+  >;
 
-export type InitializeVoteInstructionData = { discriminator: number };
+export type InitializeVoteInstructionData = {
+  discriminator: number;
+  timeToAdd: ReadonlyUint8Array;
+};
 
-export type InitializeVoteInstructionDataArgs = {};
+export type InitializeVoteInstructionDataArgs = {
+  timeToAdd: ReadonlyUint8Array;
+};
 
 export function getInitializeVoteInstructionDataEncoder(): FixedSizeEncoder<InitializeVoteInstructionDataArgs> {
   return transformEncoder(
-    getStructEncoder([['discriminator', getU8Encoder()]]),
+    getStructEncoder([
+      ['discriminator', getU8Encoder()],
+      ['timeToAdd', fixEncoderSize(getBytesEncoder(), 8)],
+    ]),
     (value) => ({ ...value, discriminator: INITIALIZE_VOTE_DISCRIMINATOR })
   );
 }
 
 export function getInitializeVoteInstructionDataDecoder(): FixedSizeDecoder<InitializeVoteInstructionData> {
-  return getStructDecoder([['discriminator', getU8Decoder()]]);
+  return getStructDecoder([
+    ['discriminator', getU8Decoder()],
+    ['timeToAdd', fixDecoderSize(getBytesDecoder(), 8)],
+  ]);
 }
 
 export function getInitializeVoteInstructionDataCodec(): FixedSizeCodec<
@@ -63,36 +135,218 @@ export function getInitializeVoteInstructionDataCodec(): FixedSizeCodec<
   );
 }
 
-export type InitializeVoteInput = {};
+export type InitializeVoteInput<
+  TAccountAuthority extends string = string,
+  TAccountPlatform extends string = string,
+  TAccountVault extends string = string,
+  TAccountVote extends string = string,
+  TAccountToken extends string = string,
+  TAccountVoteVault extends string = string,
+  TAccountVoteVaultTokenAccount extends string = string,
+  TAccountRent extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountTokenProgram extends string = string,
+> = {
+  /** Authority of the vault */
+  authority: TransactionSigner<TAccountAuthority>;
+  /** Platform pda key */
+  platform: Address<TAccountPlatform>;
+  /** platforms fee vault pda */
+  vault: Address<TAccountVault>;
+  /** new vote account */
+  vote: TransactionSigner<TAccountVote>;
+  /** vote token */
+  token: Address<TAccountToken>;
+  /** votes vault pda */
+  voteVault: Address<TAccountVoteVault>;
+  /** votes token account for storing funds */
+  voteVaultTokenAccount: Address<TAccountVoteVaultTokenAccount>;
+  /** Rent program */
+  rent?: Address<TAccountRent>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Token program */
+  tokenProgram?: Address<TAccountTokenProgram>;
+  timeToAdd: InitializeVoteInstructionDataArgs['timeToAdd'];
+};
 
 export function getInitializeVoteInstruction<
+  TAccountAuthority extends string,
+  TAccountPlatform extends string,
+  TAccountVault extends string,
+  TAccountVote extends string,
+  TAccountToken extends string,
+  TAccountVoteVault extends string,
+  TAccountVoteVaultTokenAccount extends string,
+  TAccountRent extends string,
+  TAccountSystemProgram extends string,
+  TAccountTokenProgram extends string,
   TProgramAddress extends Address = typeof P_VOTE_PROGRAM_ADDRESS,
->(config?: {
-  programAddress?: TProgramAddress;
-}): InitializeVoteInstruction<TProgramAddress> {
+>(
+  input: InitializeVoteInput<
+    TAccountAuthority,
+    TAccountPlatform,
+    TAccountVault,
+    TAccountVote,
+    TAccountToken,
+    TAccountVoteVault,
+    TAccountVoteVaultTokenAccount,
+    TAccountRent,
+    TAccountSystemProgram,
+    TAccountTokenProgram
+  >,
+  config?: { programAddress?: TProgramAddress }
+): InitializeVoteInstruction<
+  TProgramAddress,
+  TAccountAuthority,
+  TAccountPlatform,
+  TAccountVault,
+  TAccountVote,
+  TAccountToken,
+  TAccountVoteVault,
+  TAccountVoteVaultTokenAccount,
+  TAccountRent,
+  TAccountSystemProgram,
+  TAccountTokenProgram
+> {
   // Program address.
   const programAddress = config?.programAddress ?? P_VOTE_PROGRAM_ADDRESS;
 
+  // Original accounts.
+  const originalAccounts = {
+    authority: { value: input.authority ?? null, isWritable: true },
+    platform: { value: input.platform ?? null, isWritable: false },
+    vault: { value: input.vault ?? null, isWritable: false },
+    vote: { value: input.vote ?? null, isWritable: true },
+    token: { value: input.token ?? null, isWritable: false },
+    voteVault: { value: input.voteVault ?? null, isWritable: true },
+    voteVaultTokenAccount: {
+      value: input.voteVaultTokenAccount ?? null,
+      isWritable: true,
+    },
+    rent: { value: input.rent ?? null, isWritable: false },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Original args.
+  const args = { ...input };
+
+  // Resolve default values.
+  if (!accounts.rent.value) {
+    accounts.rent.value =
+      'SysvarRent111111111111111111111111111111111' as Address<'SysvarRent111111111111111111111111111111111'>;
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.tokenProgram.value) {
+    accounts.tokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
+    accounts: [
+      getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.platform),
+      getAccountMeta(accounts.vault),
+      getAccountMeta(accounts.vote),
+      getAccountMeta(accounts.token),
+      getAccountMeta(accounts.voteVault),
+      getAccountMeta(accounts.voteVaultTokenAccount),
+      getAccountMeta(accounts.rent),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.tokenProgram),
+    ],
     programAddress,
-    data: getInitializeVoteInstructionDataEncoder().encode({}),
-  } as InitializeVoteInstruction<TProgramAddress>;
+    data: getInitializeVoteInstructionDataEncoder().encode(
+      args as InitializeVoteInstructionDataArgs
+    ),
+  } as InitializeVoteInstruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountPlatform,
+    TAccountVault,
+    TAccountVote,
+    TAccountToken,
+    TAccountVoteVault,
+    TAccountVoteVaultTokenAccount,
+    TAccountRent,
+    TAccountSystemProgram,
+    TAccountTokenProgram
+  >;
 
   return instruction;
 }
 
 export type ParsedInitializeVoteInstruction<
   TProgram extends string = typeof P_VOTE_PROGRAM_ADDRESS,
+  TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
+  accounts: {
+    /** Authority of the vault */
+    authority: TAccountMetas[0];
+    /** Platform pda key */
+    platform: TAccountMetas[1];
+    /** platforms fee vault pda */
+    vault: TAccountMetas[2];
+    /** new vote account */
+    vote: TAccountMetas[3];
+    /** vote token */
+    token: TAccountMetas[4];
+    /** votes vault pda */
+    voteVault: TAccountMetas[5];
+    /** votes token account for storing funds */
+    voteVaultTokenAccount: TAccountMetas[6];
+    /** Rent program */
+    rent: TAccountMetas[7];
+    /** System program */
+    systemProgram: TAccountMetas[8];
+    /** Token program */
+    tokenProgram: TAccountMetas[9];
+  };
   data: InitializeVoteInstructionData;
 };
 
-export function parseInitializeVoteInstruction<TProgram extends string>(
-  instruction: Instruction<TProgram> & InstructionWithData<ReadonlyUint8Array>
-): ParsedInitializeVoteInstruction<TProgram> {
+export function parseInitializeVoteInstruction<
+  TProgram extends string,
+  TAccountMetas extends readonly AccountMeta[],
+>(
+  instruction: Instruction<TProgram> &
+    InstructionWithAccounts<TAccountMetas> &
+    InstructionWithData<ReadonlyUint8Array>
+): ParsedInitializeVoteInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 10) {
+    // TODO: Coded error.
+    throw new Error('Not enough accounts');
+  }
+  let accountIndex = 0;
+  const getNextAccount = () => {
+    const accountMeta = instruction.accounts![accountIndex]!;
+    accountIndex += 1;
+    return accountMeta;
+  };
   return {
     programAddress: instruction.programAddress,
+    accounts: {
+      authority: getNextAccount(),
+      platform: getNextAccount(),
+      vault: getNextAccount(),
+      vote: getNextAccount(),
+      token: getNextAccount(),
+      voteVault: getNextAccount(),
+      voteVaultTokenAccount: getNextAccount(),
+      rent: getNextAccount(),
+      systemProgram: getNextAccount(),
+      tokenProgram: getNextAccount(),
+    },
     data: getInitializeVoteInstructionDataDecoder().decode(instruction.data),
   };
 }

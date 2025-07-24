@@ -22,7 +22,7 @@ import {
 } from '../instructions';
 
 export const P_VOTE_PROGRAM_ADDRESS =
-  '2YwymitHUGW6vwk66cZpVoq5oGD31Ziz41UNokMBrKeY' as Address<'2YwymitHUGW6vwk66cZpVoq5oGD31Ziz41UNokMBrKeY'>;
+  'pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu' as Address<'pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu'>;
 
 export enum PVoteAccount {
   Platform,
@@ -67,7 +67,7 @@ export function identifyPVoteInstruction(
 }
 
 export type ParsedPVoteInstruction<
-  TProgram extends string = '2YwymitHUGW6vwk66cZpVoq5oGD31Ziz41UNokMBrKeY',
+  TProgram extends string = 'pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu',
 > =
   | ({
       instructionType: PVoteInstruction.InitializePlatform;

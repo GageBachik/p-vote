@@ -2,7 +2,6 @@ use bytemuck::{Pod, Zeroable};
 use pinocchio::{account_info::AccountInfo, program_error::ProgramError, ProgramResult};
 use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
-use shank::ShankType;
 
 use crate::{
     state::{Platform, PLATFORM_SEED},
@@ -49,7 +48,7 @@ impl<'info> TryFrom<&'info [AccountInfo]> for UpdatePlatformAccounts<'info> {
 }
 
 #[repr(C)]
-#[derive(Clone, Copy, Pod, Zeroable, ShankType)]
+#[derive(Clone, Copy, Pod, Zeroable)]
 pub struct UpdatePlatformInstructionData {
     pub new_fee: [u8; 2],
 }

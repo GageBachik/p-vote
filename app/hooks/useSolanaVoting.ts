@@ -97,6 +97,9 @@ export function useSolanaVoting() {
         computeUnitPrice: 1000,
       });
 
+      const mockSignature = ""
+      const mockVotePubkey = ""
+
       if (!transaction) {
         return {
           success: false,
