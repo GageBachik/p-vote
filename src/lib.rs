@@ -68,6 +68,7 @@ pub enum PTokenInstructions {
     #[account(7, name = "rent", desc = "Rent program")]
     #[account(8, name = "system_program", desc = "System program")]
     #[account(9, name = "token_program", desc = "Token program")]
+    #[account(10, name = "associated_token_program", desc = "Associated Token program")]
     InitializeVote { time_to_add: [u8; 8] },
 
     #[account(0, signer, writable, name="authority", desc = "Authority of the vault")]

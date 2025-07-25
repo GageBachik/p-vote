@@ -59,6 +59,7 @@ export type InitializeVoteInstruction<
   TAccountTokenProgram extends
     | string
     | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  TAccountAssociatedTokenProgram extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -95,6 +96,9 @@ export type InitializeVoteInstruction<
       TAccountTokenProgram extends string
         ? ReadonlyAccount<TAccountTokenProgram>
         : TAccountTokenProgram,
+      TAccountAssociatedTokenProgram extends string
+        ? ReadonlyAccount<TAccountAssociatedTokenProgram>
+        : TAccountAssociatedTokenProgram,
       ...TRemainingAccounts,
     ]
   >;
@@ -146,6 +150,7 @@ export type InitializeVoteInput<
   TAccountRent extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountTokenProgram extends string = string,
+  TAccountAssociatedTokenProgram extends string = string,
 > = {
   /** Authority of the vault */
   authority: TransactionSigner<TAccountAuthority>;
@@ -167,6 +172,8 @@ export type InitializeVoteInput<
   systemProgram?: Address<TAccountSystemProgram>;
   /** Token program */
   tokenProgram?: Address<TAccountTokenProgram>;
+  /** Associated Token program */
+  associatedTokenProgram: Address<TAccountAssociatedTokenProgram>;
   timeToAdd: InitializeVoteInstructionDataArgs['timeToAdd'];
 };
 
@@ -181,6 +188,7 @@ export function getInitializeVoteInstruction<
   TAccountRent extends string,
   TAccountSystemProgram extends string,
   TAccountTokenProgram extends string,
+  TAccountAssociatedTokenProgram extends string,
   TProgramAddress extends Address = typeof P_VOTE_PROGRAM_ADDRESS,
 >(
   input: InitializeVoteInput<
@@ -193,7 +201,8 @@ export function getInitializeVoteInstruction<
     TAccountVoteVaultTokenAccount,
     TAccountRent,
     TAccountSystemProgram,
-    TAccountTokenProgram
+    TAccountTokenProgram,
+    TAccountAssociatedTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
 ): InitializeVoteInstruction<
@@ -207,7 +216,8 @@ export function getInitializeVoteInstruction<
   TAccountVoteVaultTokenAccount,
   TAccountRent,
   TAccountSystemProgram,
-  TAccountTokenProgram
+  TAccountTokenProgram,
+  TAccountAssociatedTokenProgram
 > {
   // Program address.
   const programAddress = config?.programAddress ?? P_VOTE_PROGRAM_ADDRESS;
@@ -227,6 +237,10 @@ export function getInitializeVoteInstruction<
     rent: { value: input.rent ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+    associatedTokenProgram: {
+      value: input.associatedTokenProgram ?? null,
+      isWritable: false,
+    },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -263,6 +277,7 @@ export function getInitializeVoteInstruction<
       getAccountMeta(accounts.rent),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.tokenProgram),
+      getAccountMeta(accounts.associatedTokenProgram),
     ],
     programAddress,
     data: getInitializeVoteInstructionDataEncoder().encode(
@@ -279,7 +294,8 @@ export function getInitializeVoteInstruction<
     TAccountVoteVaultTokenAccount,
     TAccountRent,
     TAccountSystemProgram,
-    TAccountTokenProgram
+    TAccountTokenProgram,
+    TAccountAssociatedTokenProgram
   >;
 
   return instruction;
@@ -311,6 +327,8 @@ export type ParsedInitializeVoteInstruction<
     systemProgram: TAccountMetas[8];
     /** Token program */
     tokenProgram: TAccountMetas[9];
+    /** Associated Token program */
+    associatedTokenProgram: TAccountMetas[10];
   };
   data: InitializeVoteInstructionData;
 };
@@ -323,7 +341,7 @@ export function parseInitializeVoteInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedInitializeVoteInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 10) {
+  if (instruction.accounts.length < 11) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -346,6 +364,7 @@ export function parseInitializeVoteInstruction<
       rent: getNextAccount(),
       systemProgram: getNextAccount(),
       tokenProgram: getNextAccount(),
+      associatedTokenProgram: getNextAccount(),
     },
     data: getInitializeVoteInstructionDataDecoder().decode(instruction.data),
   };

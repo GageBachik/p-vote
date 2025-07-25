@@ -212,6 +212,14 @@
           "docs": [
             "Token program"
           ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Associated Token program"
+          ]
         }
       ],
       "args": [

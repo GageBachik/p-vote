@@ -3,7 +3,7 @@
 
 // remember to run surfpool start before any testing will work.
 import { loadKeypairSignerFromFile } from "gill/node";
-import { TOKEN_PROGRAM_ADDRESS, getAssociatedTokenAccountAddress, getCreateAssociatedTokenIdempotentInstruction } from "gill/programs/token";
+import { TOKEN_PROGRAM_ADDRESS, getAssociatedTokenAccountAddress, getCreateAssociatedTokenIdempotentInstruction, ASSOCIATED_TOKEN_PROGRAM_ADDRESS } from "gill/programs/token";
 import { createSolanaClient, createTransaction, address, getAddressEncoder, getProgramDerivedAddress, generateKeyPairSigner } from "gill";
 // import { getInitializePlatformInstruction } from "@/clients/js/src/generated";
 import * as programClient from "../clients/js/src/generated";
@@ -84,6 +84,7 @@ const initVoteIx = programClient.getInitializeVoteInstruction({
     token: usdcMint,
     voteVault: voteVaultPda,
     voteVaultTokenAccount: await getAssociatedTokenAccountAddress(usdcMint,voteVaultPda),
+    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ADDRESS, 
     timeToAdd
 });
 

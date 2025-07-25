@@ -26,13 +26,14 @@ pub struct InitializeVoteAccounts<'info> {
     pub rent: &'info AccountInfo,
     pub system_program: &'info AccountInfo,
     pub token_program: &'info AccountInfo,
+    pub associated_token_program: &'info AccountInfo,
 }
 
 impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
     type Error = ProgramError;
 
     fn try_from(accounts: &'info [AccountInfo]) -> Result<Self, Self::Error> {
-        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, rent, system_program, token_program, ..] =
+        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, rent, system_program, token_program, associated_token_program, ..] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -103,7 +104,8 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
             vote_vault_token_account,
             rent,
             system_program,
-            token_program
+            token_program,
+            associated_token_program
         })
     }
 }
@@ -210,6 +212,7 @@ impl<'info> InitializeVote<'info> {
             self.accounts.token,
             self.accounts.system_program,
             self.accounts.token_program,
+            self.accounts.associated_token_program,
         ];
         let create_ata_account_metas = [
             AccountMeta::new( self.accounts.authority.key(), true, true),
