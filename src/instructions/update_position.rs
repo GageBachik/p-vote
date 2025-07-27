@@ -2,6 +2,7 @@ use bytemuck::{Pod, Zeroable};
 use pinocchio::{
     account_info::AccountInfo, program_error::ProgramError, sysvars::Sysvar, ProgramResult,
 };
+use pinocchio_log::log;
 
 use pinocchio::sysvars::clock::Clock;
 use pinocchio_pubkey::derive_address;
@@ -38,10 +39,16 @@ impl<'info> TryFrom<&'info [AccountInfo]> for UpdatePositionAccounts<'info> {
         };
 
         if !authority.is_signer() {
+            log!("Authority is not a signer: {}", authority.key());
             return Err(ProgramError::InvalidAccountOwner);
         }
 
         if !platform.is_owned_by(&crate::ID) {
+            log!(
+                "Platform is owned by: {} | Expected: {}",
+                platform.owner(),
+                &crate::ID
+            );
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -50,6 +57,11 @@ impl<'info> TryFrom<&'info [AccountInfo]> for UpdatePositionAccounts<'info> {
         }
 
         if !vote.is_owned_by(&crate::ID) {
+            log!(
+                "Vote is owned by: {} | Expected: {}",
+                vote.owner(),
+                &crate::ID
+            );
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -58,6 +70,11 @@ impl<'info> TryFrom<&'info [AccountInfo]> for UpdatePositionAccounts<'info> {
         }
 
         if !token.is_owned_by(&pinocchio_token::ID) {
+            log!(
+                "Token is owned by: {} | Expected: {}",
+                token.owner(),
+                &pinocchio_token::ID
+            );
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -72,6 +89,11 @@ impl<'info> TryFrom<&'info [AccountInfo]> for UpdatePositionAccounts<'info> {
         }
 
         if !position.is_owned_by(&crate::ID) {
+            log!(
+                "Position is owned by: {} | Expected: {}",
+                position.owner(),
+                &crate::ID
+            );
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -79,15 +101,30 @@ impl<'info> TryFrom<&'info [AccountInfo]> for UpdatePositionAccounts<'info> {
             return Err(ProgramError::InvalidAccountData);
         }
 
-        if vote_vault_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !vote_vault_token_account.is_owned_by(&pinocchio_token::ID) {
+            log!(
+                "Vote vault token account is owned by: {} | Expected: {}",
+                vote_vault_token_account.owner(),
+                &pinocchio_token::ID
+            );
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if authority_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !authority_token_account.is_owned_by(&pinocchio_token::ID) {
+            log!(
+                "Authority token account is owned by: {} | Expected: {}",
+                authority_token_account.owner(),
+                &pinocchio_token::ID
+            );
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if vault_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !vault_token_account.is_owned_by(&pinocchio_token::ID) {
+            log!(
+                "Vault token account is owned by: {} | Expected: {}",
+                vault_token_account.owner(),
+                &pinocchio_token::ID
+            );
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -203,7 +240,7 @@ impl<'info> UpdatePosition<'info> {
         }
 
         // Transfer appropiate token and fees
-        let update_amount = u64::from_be_bytes(self.instruction_data.amount);
+        let update_amount = u64::from_le_bytes(self.instruction_data.amount);
         let fee_amount = calculate_fees(update_amount, u16::from_le_bytes(platform_state.fee));
         // Initialize the position vault by sending it some sol (but don't actually init the data)
         Transfer {
@@ -223,7 +260,7 @@ impl<'info> UpdatePosition<'info> {
         .invoke()?;
 
         position_state.amount =
-            (u64::from_be_bytes(self.instruction_data.amount) + update_amount).to_be_bytes();
+            (u64::from_le_bytes(self.instruction_data.amount) + update_amount).to_le_bytes();
 
         if position_state.side == 0 {
             vote_state.false_votes =

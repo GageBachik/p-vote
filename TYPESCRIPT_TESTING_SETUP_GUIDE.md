@@ -4,11 +4,19 @@ This guide provides a complete setup for TypeScript testing with Codama client g
 
 ## Overview
 
-This testing setup includes:
-- **Codama**: IDL-based TypeScript client generation
+This testing setup follows a specific workflow:
+1. **Build Program**: Compile the Rust Solana program
+2. **Generate IDL**: Extract Interface Definition Language from the program using Shank
+3. **Generate Clients**: Use Codama to generate TypeScript (and potentially Rust/Python) clients from the IDL
+4. **Run Surfpool**: Start the enhanced Solana test validator with mainnet program access
+5. **Execute Tests**: Run end-to-end tests against the local validator
+
+### Key Components:
+- **Codama**: IDL-based client generation for multiple languages
 - **Gill**: Modern Solana TypeScript SDK
-- **Surfpool**: Local Solana validator for testing
-- **Automated Testing Pipeline**: Build, generate, test, and cleanup
+- **Surfpool**: Enhanced Solana test validator with mainnet program access
+- **Shank**: IDL generation from Rust programs
+- **Automated Pipeline**: Complete build, generate, test, and cleanup workflow
 
 ## Project Structure
 
@@ -26,6 +34,47 @@ This testing setup includes:
 │   └── your_program.json   # Generated IDL file
 └── src/                    # Rust program source
 ```
+
+## Initial Setup Requirements
+
+### Prerequisites
+
+Before setting up the testing environment, ensure you have:
+
+```bash
+# Install Rust and Solana CLI
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+
+# Install Shank for IDL generation
+cargo install shank-cli
+
+# Install Surfpool for enhanced local testing
+cargo install surfpool
+
+# Install Node.js dependencies (after creating package.json)
+npm install
+```
+
+### Critical First-Time Setup
+
+**IMPORTANT**: Before running any tests, you MUST initialize Surfpool in your project directory:
+
+```bash
+# Navigate to your project root
+cd your-project-directory
+
+# Initialize Surfpool (FIRST TIME ONLY)
+surfpool start
+```
+
+When you first run `surfpool start`, it will prompt you to create project configuration files:
+- **Accept ALL defaults** when prompted
+- This creates configuration files that automatically deploy your Pinocchio program on startup
+- This setup ensures your program is available every time Surfpool starts
+- You should never need to modify these generated files
+
+**This initialization step is REQUIRED before `run_tests.sh` will work successfully.**
 
 ## Setup Instructions
 
@@ -95,7 +144,19 @@ export default createCodamaConfig({
 });
 ```
 
-### 3. Automated Test Runner (run_tests.sh)
+### 3. Understanding the Build Pipeline
+
+The testing workflow follows this exact sequence:
+
+1. **Build Program** (`cargo build-sbf`): Compiles your Rust Solana program
+2. **Generate IDL** (`shank idl`): Extracts interface definitions from your program
+3. **Generate Clients** (`npx codama run js`): Creates TypeScript client from IDL
+4. **Start Surfpool**: Launches enhanced validator with mainnet program access
+5. **Run Tests**: Executes your e2e tests against the local validator
+
+### 4. Automated Test Runner (run_tests.sh)
+
+**Note**: This script should work out-of-the-box after Surfpool initialization. You should never need to modify it.
 
 ```bash
 #!/usr/bin/env bash
@@ -103,17 +164,17 @@ export default createCodamaConfig({
 set -euo pipefail
 
 # ───────── 1) BUILD / CODE‑GEN STEPS ─────────
-echo "🚀 cargo build-sbf"
+echo "🚀 Building Solana program..."
 cargo build-sbf
 
-echo "📜 shank idl"
+echo "📜 Generating IDL from program..."
 shank idl
 
-echo "🛠 npx codama run js"
+echo "🛠 Generating TypeScript client from IDL..."
 npx codama run js
 
 # ───────── 2) START SURFPOOL IN A NEW TERMINAL WINDOW ─────────
-echo "🌊 Launching surfpool in its own Terminal window…"
+echo "🌊 Launching Surfpool (enhanced Solana validator)..."
 
 # Get current directory
 CURRENT_DIR=$(pwd)
@@ -131,15 +192,16 @@ APPLESCRIPT
 )
 
 echo "ℹ️  Surfpool running in Terminal window id ${SURF_WIN_ID}"
-sleep 3  # give Surfpool a moment to boot
+echo "ℹ️  Surfpool provides access to mainnet programs (Token, Metaplex, etc.)"
+sleep 3  # give Surfpool a moment to boot and deploy your program
 
 # ───────── 3) RUN E2E TESTS ─────────
-echo "✅ Running e2e tests…"
+echo "✅ Running e2e tests against Surfpool validator..."
 npx tsx e2e/e2e.ts
 TEST_EXIT=$?
 
 # ───────── 4) CLOSE THE SURFPOOL WINDOW ─────────
-echo "🧹 Closing Surfpool window…"
+echo "🧹 Cleaning up Surfpool..."
 osascript <<APPLESCRIPT
 tell application "Terminal"
     try
@@ -162,7 +224,7 @@ APPLESCRIPT
 exit $TEST_EXIT
 ```
 
-### 4. Linux/Cross-Platform Test Runner (run_tests_linux.sh)
+### 5. Linux/Cross-Platform Test Runner (run_tests_linux.sh)
 
 ```bash
 #!/usr/bin/env bash
@@ -170,35 +232,49 @@ exit $TEST_EXIT
 set -euo pipefail
 
 # ───────── 1) BUILD / CODE‑GEN STEPS ─────────
-echo "🚀 cargo build-sbf"
+echo "🚀 Building Solana program..."
 cargo build-sbf
 
-echo "📜 shank idl"
+echo "📜 Generating IDL from program..."
 shank idl
 
-echo "🛠 npx codama run js"
+echo "🛠 Generating TypeScript client from IDL..."
 npx codama run js
 
 # ───────── 2) START SURFPOOL IN BACKGROUND ─────────
-echo "🌊 Starting surfpool in background..."
+echo "🌊 Starting Surfpool (enhanced Solana validator)..."
 surfpool start &
 SURFPOOL_PID=$!
 
-# Wait for surfpool to be ready
-sleep 5
+echo "ℹ️  Surfpool provides access to mainnet programs (Token, Metaplex, etc.)"
+# Wait for surfpool to be ready and deploy your program
+sleep 8
 
 # ───────── 3) RUN E2E TESTS ─────────
-echo "✅ Running e2e tests…"
+echo "✅ Running e2e tests against Surfpool validator..."
 npx tsx e2e/e2e.ts
 TEST_EXIT=$?
 
 # ───────── 4) CLEANUP ─────────
-echo "🧹 Stopping surfpool..."
+echo "🧹 Cleaning up Surfpool..."
 kill $SURFPOOL_PID 2>/dev/null || true
 wait $SURFPOOL_PID 2>/dev/null || true
 
 exit $TEST_EXIT
 ```
+
+## About Surfpool
+
+Surfpool is an enhanced Solana test validator that provides several key advantages over the standard `solana-test-validator`:
+
+- **Mainnet Program Access**: Automatically provides access to mainnet programs like Token Program, Metaplex Metadata, and others
+- **Automatic Program Deployment**: Configured to automatically deploy your Pinocchio program on startup
+- **Enhanced Testing Environment**: Optimized for local development and testing
+- **Documentation**: Full documentation available at https://docs.surfpool.run/
+
+### Why Use Surfpool?
+
+When testing Solana programs, you often need to interact with existing mainnet programs (tokens, NFTs, DeFi protocols). Surfpool makes this seamless by providing a local environment that mirrors mainnet capabilities while allowing you to test your custom program.
 
 ## E2E Testing Patterns
 
@@ -505,35 +581,79 @@ async function verifyAccountState(accountAddress: Address) {
 
 ## Development Workflow
 
-### 1. Make Changes to Rust Program
+### 1. Initial Project Setup (One-time)
+```bash
+# Clone or create your project
+cd your-solana-project
+
+# Install dependencies
+npm install
+
+# CRITICAL: Initialize Surfpool (accept all defaults)
+surfpool start
+# Follow prompts and accept all defaults
+# This creates auto-deployment configuration
+# Stop surfpool after setup (Ctrl+C)
+```
+
+### 2. Regular Development Cycle
 ```bash
 # Edit your Rust code
 vim src/instructions/your_instruction.rs
-```
 
-### 2. Run Tests
-```bash
-# This will build, generate clients, and run tests
+# Run complete test suite (builds, generates, tests)
 npm test
 ```
 
-### 3. Debug Issues
+### 3. Manual Testing/Debugging
 ```bash
-# Run individual steps for debugging
-cargo build-sbf
-shank idl
-npx codama run js
-npx tsx e2e/e2e.ts
+# Run individual pipeline steps for debugging
+cargo build-sbf          # Build program
+shank idl               # Generate IDL
+npx codama run js       # Generate TypeScript client
+surfpool start          # Start validator (in separate terminal)
+npx tsx e2e/e2e.ts     # Run tests
+```
+
+### 4. Understanding the Generated Files
+
+After running the pipeline, you'll have:
+```
+├── target/deploy/your_program.so    # Compiled program
+├── idl/your_program.json           # Generated IDL
+├── clients/js/src/generated/       # TypeScript client
+│   ├── instructions/               # Typed instruction functions
+│   ├── accounts/                   # Account type definitions
+│   ├── types/                      # Data type definitions
+│   └── index.ts                    # Main exports
+└── surfpool.toml                   # Surfpool configuration (auto-generated)
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Surfpool not starting**: Ensure you have surfpool installed and in PATH
-2. **IDL generation fails**: Check your Shank annotations in Rust code
-3. **Client generation fails**: Verify codama.js configuration
-4. **Transaction fails**: Check account validation and instruction data
+1. **"run_tests.sh fails immediately"**: 
+   - **Solution**: You must run `surfpool start` once in your project directory and accept all defaults before running tests
+   - This creates the necessary configuration files for automatic program deployment
+
+2. **"Surfpool not starting"**: 
+   - Ensure surfpool is installed: `cargo install surfpool`
+   - Check if port 8899 is already in use: `lsof -i :8899`
+
+3. **"IDL generation fails"**: 
+   - Check your Shank annotations in Rust code
+   - Ensure all instruction structs have proper `#[derive(ShankInstruction)]`
+   - Verify account annotations are correct
+
+4. **"Client generation fails"**: 
+   - Verify `codama.js` configuration matches your IDL path
+   - Check that IDL was generated successfully: `cat idl/your_program.json`
+
+5. **"Transaction fails with program not found"**: 
+   - Ensure Surfpool initialization was completed (accept defaults)
+   - Check that your program ID in tests matches the one in `lib.rs`
+   - Verify Surfpool deployed your program (check logs on startup)
 
 ### Debug Commands
 
@@ -544,30 +664,50 @@ ps aux | grep surfpool
 # Verify IDL generation
 cat idl/your_program.json
 
-# Check generated client
+# Check generated client structure
 ls -la clients/js/src/generated/
+tree clients/js/src/generated/
 
-# Test RPC connection
+# Test RPC connection to Surfpool
 curl -X POST -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' \
   http://localhost:8899
+
+# Check Surfpool configuration
+cat surfpool.toml
+
+# Verify program deployment in Surfpool logs
+# (Look for your program ID in the startup logs)
 ```
 
-## Installation Requirements
+### Step-by-Step Troubleshooting
 
-```bash
-# Install Rust and Solana CLI
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-sh -c "$(curl -sSfL https://release.solana.com/stable/install)"
+If tests are failing, debug in this order:
 
-# Install Node.js dependencies
-npm install
+1. **Check build**: `cargo build-sbf` should complete without errors
+2. **Check IDL**: `shank idl` should generate `idl/your_program.json`
+3. **Check client generation**: `npx codama run js` should populate `clients/js/src/generated/`
+4. **Check Surfpool**: Start manually and look for your program in deployment logs
+5. **Check tests**: Run `npx tsx e2e/e2e.ts` with Surfpool running
 
-# Install Shank for IDL generation
-cargo install shank-cli
+## Quick Start Checklist
 
-# Install Surfpool for local testing
-cargo install surfpool
-```
+For a new project, follow this exact sequence:
+
+- [ ] Install prerequisites (Rust, Solana CLI, Node.js)
+- [ ] Install tools: `cargo install shank-cli surfpool`
+- [ ] Create `package.json` with required dependencies
+- [ ] Create `codama.js` configuration
+- [ ] Copy `run_tests.sh` script
+- [ ] **CRITICAL**: Run `surfpool start` and accept all defaults
+- [ ] Create your first test in `e2e/e2e.ts`
+- [ ] Run `npm test` to verify everything works
+
+## Additional Resources
+
+- **Surfpool Documentation**: https://docs.surfpool.run/
+- **Codama Documentation**: https://github.com/codama-idl/codama
+- **Gill SDK Documentation**: https://github.com/solana-labs/gill
+- **Shank IDL Generation**: https://github.com/metaplex-foundation/shank
 
 This setup provides a complete TypeScript testing environment with automated client generation, local validator management, and comprehensive testing patterns for Solana programs.

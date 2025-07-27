@@ -9,6 +9,7 @@ use pinocchio::{
 };
 
 use pinocchio::sysvars::clock::Clock;
+use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
 use pinocchio_token::instructions::Transfer;
 
@@ -30,23 +31,28 @@ pub struct InitializePositionAccounts<'info> {
     pub authority_token_account: &'info AccountInfo,
     pub vault_token_account: &'info AccountInfo,
     pub position: &'info AccountInfo,
+    pub rent: &'info AccountInfo,
+    pub system_program: &'info AccountInfo,
+    pub token_program: &'info AccountInfo,
 }
 
 impl<'info> TryFrom<&'info [AccountInfo]> for InitializePositionAccounts<'info> {
     type Error = ProgramError;
 
     fn try_from(accounts: &'info [AccountInfo]) -> Result<Self, Self::Error> {
-        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position, ..] =
+        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position, rent, system_program, token_program] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
         };
 
         if !authority.is_signer() {
+            log!("[InitializePosition] authority is not a signer");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
         if !platform.is_owned_by(&crate::ID) {
+            log!("[InitializePosition] platform is not owned by the program");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -55,6 +61,7 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePositionAccounts<'info> 
         }
 
         if !vote.is_owned_by(&crate::ID) {
+            log!("[InitializePosition] vote is not owned by the program");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -77,6 +84,7 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePositionAccounts<'info> 
         }
 
         if !position.is_owned_by(&pinocchio_system::ID) {
+            log!("[InitializePosition] position is not owned by the program");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -84,15 +92,24 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePositionAccounts<'info> 
             return Err(ProgramError::AccountAlreadyInitialized);
         }
 
-        if vote_vault_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !vote_vault_token_account.is_owned_by(&pinocchio_token::ID) {
+            log!("[InitializePosition] vote_vault_token_account is not owned by the token program");
+            log!(
+                "{}",
+                bs58::encode(vote_vault_token_account.owner())
+                    .into_string()
+                    .as_str()
+            );
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if authority_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !authority_token_account.is_owned_by(&pinocchio_token::ID) {
+            log!("[InitializePosition] authority_token_account is not owned by the token program");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if vault_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !vault_token_account.is_owned_by(&pinocchio_token::ID) {
+            log!("[InitializePosition] vault_token_account is not owned by the token program");
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -107,6 +124,9 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializePositionAccounts<'info> 
             authority_token_account,
             vault_token_account,
             position,
+            rent,
+            system_program,
+            token_program,
         })
     }
 }
@@ -211,7 +231,9 @@ impl<'info> InitializePosition<'info> {
         // Initialize the position account
         let bump = [position_bump];
         let seed = [
+            Seed::from(POSITION_SEED),
             Seed::from(self.accounts.vote.key().as_ref()),
+            Seed::from(self.accounts.authority.key().as_ref()),
             Seed::from(&bump),
         ];
         let signer_seeds = Signer::from(&seed);
@@ -225,8 +247,13 @@ impl<'info> InitializePosition<'info> {
         .invoke_signed(&[signer_seeds])?;
 
         // Transfer appropiate token and fees
-        let init_amount = u64::from_be_bytes(self.instruction_data.amount);
+        let init_amount = u64::from_le_bytes(self.instruction_data.amount);
         let fee_amount = calculate_fees(init_amount, u16::from_le_bytes(platform_state.fee));
+        log!(
+            "[InitializePosition] init_amount: {}, fee_amount: {}",
+            init_amount,
+            fee_amount
+        );
         // Initialize the position vault by sending it some sol (but don't actually init the data)
         Transfer {
             from: self.accounts.authority_token_account,

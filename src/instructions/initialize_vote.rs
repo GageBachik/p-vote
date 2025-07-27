@@ -1,6 +1,12 @@
 use bytemuck::{Pod, Zeroable};
 use pinocchio::{
-    account_info::AccountInfo, cpi::invoke, instruction::{AccountMeta, Instruction}, program_error::ProgramError, pubkey, sysvars::{rent::Rent, Sysvar}, ProgramResult
+    account_info::AccountInfo,
+    cpi::invoke,
+    instruction::{AccountMeta, Instruction},
+    program_error::ProgramError,
+    pubkey,
+    sysvars::{rent::Rent, Sysvar},
+    ProgramResult,
 };
 
 use pinocchio::sysvars::clock::Clock;
@@ -23,6 +29,7 @@ pub struct InitializeVoteAccounts<'info> {
     pub token: &'info AccountInfo,
     pub vote_vault: &'info AccountInfo,
     pub vote_vault_token_account: &'info AccountInfo,
+    pub vault_token_account: &'info AccountInfo,
     pub rent: &'info AccountInfo,
     pub system_program: &'info AccountInfo,
     pub token_program: &'info AccountInfo,
@@ -33,7 +40,7 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
     type Error = ProgramError;
 
     fn try_from(accounts: &'info [AccountInfo]) -> Result<Self, Self::Error> {
-        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, rent, system_program, token_program, associated_token_program, ..] =
+        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, vault_token_account, rent, system_program, token_program, associated_token_program, ..] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -102,10 +109,11 @@ impl<'info> TryFrom<&'info [AccountInfo]> for InitializeVoteAccounts<'info> {
             token,
             vote_vault,
             vote_vault_token_account,
+            vault_token_account,
             rent,
             system_program,
             token_program,
-            associated_token_program
+            associated_token_program,
         })
     }
 }
@@ -215,8 +223,8 @@ impl<'info> InitializeVote<'info> {
             self.accounts.associated_token_program,
         ];
         let create_ata_account_metas = [
-            AccountMeta::new( self.accounts.authority.key(), true, true),
-            AccountMeta::new( self.accounts.vote_vault_token_account.key(), true, false),
+            AccountMeta::new(self.accounts.authority.key(), true, true),
+            AccountMeta::new(self.accounts.vote_vault_token_account.key(), true, false),
             AccountMeta::readonly(self.accounts.vote_vault.key()),
             AccountMeta::readonly(self.accounts.token.key()),
             AccountMeta::readonly(self.accounts.system_program.key()),
@@ -225,11 +233,49 @@ impl<'info> InitializeVote<'info> {
         let create_ata_ix = Instruction {
             program_id: &pinocchio_associated_token_account::ID,
             accounts: &create_ata_account_metas,
-            data: &[0]
+            data: &[0],
         };
 
         invoke(&create_ata_ix, &create_ata_account_infos)?;
         log!("the ata was made");
+
+        // If the vault doesn't have an associated token account for this token, create it
+        if !self
+            .accounts
+            .vault_token_account
+            .is_owned_by(&pinocchio_token::ID)
+            && self
+                .accounts
+                .vault_token_account
+                .data_len()
+                .ne(&pinocchio_token::state::TokenAccount::LEN)
+        {
+            let create_ata_account_infos = [
+                self.accounts.authority,
+                self.accounts.vault_token_account,
+                self.accounts.vault,
+                self.accounts.token,
+                self.accounts.system_program,
+                self.accounts.token_program,
+                self.accounts.associated_token_program,
+            ];
+            let create_ata_account_metas = [
+                AccountMeta::new(self.accounts.authority.key(), true, true),
+                AccountMeta::new(self.accounts.vault_token_account.key(), true, false),
+                AccountMeta::readonly(self.accounts.vault.key()),
+                AccountMeta::readonly(self.accounts.token.key()),
+                AccountMeta::readonly(self.accounts.system_program.key()),
+                AccountMeta::readonly(self.accounts.token_program.key()),
+            ];
+            let create_ata_ix = Instruction {
+                program_id: &pinocchio_associated_token_account::ID,
+                accounts: &create_ata_account_metas,
+                data: &[0],
+            };
+
+            invoke(&create_ata_ix, &create_ata_account_infos)?;
+            log!("the vault token ata was made");
+        }
 
         // set vote account data
         let mut vote = self.accounts.vote.clone();
@@ -241,7 +287,7 @@ impl<'info> InitializeVote<'info> {
         // dont let the user arbitratily choose a timestamp for safety.
         vote_state.end_timestamp = (i64::from_le_bytes(self.instruction_data.time_to_add)
             + Clock::get()?.unix_timestamp)
-            .to_be_bytes();
+            .to_le_bytes();
 
         let init_sol = (0.01 * 1e9) as u64;
         let fee_sol = calculate_fees(init_sol, u16::from_le_bytes(platform_state.fee));

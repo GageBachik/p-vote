@@ -44,6 +44,7 @@ export function getUpdatePlatformDiscriminatorBytes() {
 export type UpdatePlatformInstruction<
   TProgram extends string = typeof P_VOTE_PROGRAM_ADDRESS,
   TAccountAuthority extends string | AccountMeta<string> = string,
+  TAccountNewAuthority extends string | AccountMeta<string> = string,
   TAccountPlatform extends string | AccountMeta<string> = string,
   TAccountVault extends string | AccountMeta<string> = string,
   TAccountRent extends
@@ -61,6 +62,9 @@ export type UpdatePlatformInstruction<
         ? WritableSignerAccount<TAccountAuthority> &
             AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
+      TAccountNewAuthority extends string
+        ? ReadonlyAccount<TAccountNewAuthority>
+        : TAccountNewAuthority,
       TAccountPlatform extends string
         ? WritableAccount<TAccountPlatform>
         : TAccountPlatform,
@@ -113,6 +117,7 @@ export function getUpdatePlatformInstructionDataCodec(): FixedSizeCodec<
 
 export type UpdatePlatformInput<
   TAccountAuthority extends string = string,
+  TAccountNewAuthority extends string = string,
   TAccountPlatform extends string = string,
   TAccountVault extends string = string,
   TAccountRent extends string = string,
@@ -120,6 +125,8 @@ export type UpdatePlatformInput<
 > = {
   /** Authority of the vault */
   authority: TransactionSigner<TAccountAuthority>;
+  /** new authority of the vault */
+  newAuthority: Address<TAccountNewAuthority>;
   /** Platform pda key */
   platform: Address<TAccountPlatform>;
   /** platforms fee vault pda */
@@ -133,6 +140,7 @@ export type UpdatePlatformInput<
 
 export function getUpdatePlatformInstruction<
   TAccountAuthority extends string,
+  TAccountNewAuthority extends string,
   TAccountPlatform extends string,
   TAccountVault extends string,
   TAccountRent extends string,
@@ -141,6 +149,7 @@ export function getUpdatePlatformInstruction<
 >(
   input: UpdatePlatformInput<
     TAccountAuthority,
+    TAccountNewAuthority,
     TAccountPlatform,
     TAccountVault,
     TAccountRent,
@@ -150,6 +159,7 @@ export function getUpdatePlatformInstruction<
 ): UpdatePlatformInstruction<
   TProgramAddress,
   TAccountAuthority,
+  TAccountNewAuthority,
   TAccountPlatform,
   TAccountVault,
   TAccountRent,
@@ -161,6 +171,7 @@ export function getUpdatePlatformInstruction<
   // Original accounts.
   const originalAccounts = {
     authority: { value: input.authority ?? null, isWritable: true },
+    newAuthority: { value: input.newAuthority ?? null, isWritable: false },
     platform: { value: input.platform ?? null, isWritable: true },
     vault: { value: input.vault ?? null, isWritable: false },
     rent: { value: input.rent ?? null, isWritable: false },
@@ -188,6 +199,7 @@ export function getUpdatePlatformInstruction<
   const instruction = {
     accounts: [
       getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.newAuthority),
       getAccountMeta(accounts.platform),
       getAccountMeta(accounts.vault),
       getAccountMeta(accounts.rent),
@@ -200,6 +212,7 @@ export function getUpdatePlatformInstruction<
   } as UpdatePlatformInstruction<
     TProgramAddress,
     TAccountAuthority,
+    TAccountNewAuthority,
     TAccountPlatform,
     TAccountVault,
     TAccountRent,
@@ -217,14 +230,16 @@ export type ParsedUpdatePlatformInstruction<
   accounts: {
     /** Authority of the vault */
     authority: TAccountMetas[0];
+    /** new authority of the vault */
+    newAuthority: TAccountMetas[1];
     /** Platform pda key */
-    platform: TAccountMetas[1];
+    platform: TAccountMetas[2];
     /** platforms fee vault pda */
-    vault: TAccountMetas[2];
+    vault: TAccountMetas[3];
     /** Rent program */
-    rent: TAccountMetas[3];
+    rent: TAccountMetas[4];
     /** System program */
-    systemProgram: TAccountMetas[4];
+    systemProgram: TAccountMetas[5];
   };
   data: UpdatePlatformInstructionData;
 };
@@ -237,7 +252,7 @@ export function parseUpdatePlatformInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedUpdatePlatformInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -251,6 +266,7 @@ export function parseUpdatePlatformInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       authority: getNextAccount(),
+      newAuthority: getNextAccount(),
       platform: getNextAccount(),
       vault: getNextAccount(),
       rent: getNextAccount(),

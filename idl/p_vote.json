@@ -82,6 +82,14 @@
           ]
         },
         {
+          "name": "newAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "new authority of the vault"
+          ]
+        },
+        {
           "name": "platform",
           "isMut": true,
           "isSigner": false,
@@ -183,6 +191,14 @@
         },
         {
           "name": "voteVaultTokenAccount",
+          "isMut": true,
+          "isSigner": false,
+          "docs": [
+            "votes token account for storing funds"
+          ]
+        },
+        {
+          "name": "vaultTokenAccount",
           "isMut": true,
           "isSigner": false,
           "docs": [
@@ -336,6 +352,14 @@
           "docs": [
             "System program"
           ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Token program"
+          ]
         }
       ],
       "args": [
@@ -455,6 +479,14 @@
           "isSigner": false,
           "docs": [
             "System program"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Token program"
           ]
         }
       ],

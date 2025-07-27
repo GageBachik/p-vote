@@ -1,0 +1,82 @@
+Jul 27 18:57:34.393 INFO Datasource connection successful. Epoch 824 / Slot index 169030 / Slot 356137030.
+Jul 27 18:57:34.393 INFO Account GKPoVMxhDTi3SGxK8wRgguwfXjV8EmNkpqCfeQWyhniT updated.
+Jul 27 18:57:34.393 INFO Genesis airdrop successful GKPoVMxhDTi3SGxK8wRgguwfXjV8EmNkpqCfeQWyhniT: 10000000000000
+Jul 27 18:57:34.393 INFO Runbook 'deployment' execution started
+Jul 27 18:57:34.718 INFO Runbook 'deployment' execution completed
+Jul 27 18:57:37.974 INFO Transaction processed 3mTZsidCfhtBncSxjHMFpE47qe5TEjHD9NBZvj2gNCSC3FPts3qdFy2tUc11wnHNGJGfvh7bCs1nBw2wNq7wytLv
+Jul 27 18:57:37.974 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu invoke [1]
+Jul 27 18:57:37.974 INFO Program 11111111111111111111111111111111 invoke [2]
+Jul 27 18:57:37.974 INFO Program 11111111111111111111111111111111 success
+Jul 27 18:57:37.974 INFO Program 11111111111111111111111111111111 invoke [2]
+Jul 27 18:57:37.974 INFO Program 11111111111111111111111111111111 success
+Jul 27 18:57:37.974 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu consumed 2944 of 200000 compute units
+Jul 27 18:57:37.974 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu success
+Jul 27 18:57:38.131 INFO Account EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v updated.
+Jul 27 18:57:38.135 INFO Transaction processed 4PcwWbgY291HkCyt2r4WkFyVYGeSDnHJ9oep5xEBAmavkoDka2F4WGRcxdfMZu1eeDQEVSSe6N3mk4KjLL5syKSv
+Jul 27 18:57:38.135 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu invoke [1]
+Jul 27 18:57:38.135 INFO Program 11111111111111111111111111111111 invoke [2]
+Jul 27 18:57:38.135 INFO Program 11111111111111111111111111111111 success
+Jul 27 18:57:38.135 INFO Program log: the vote account was made
+Jul 27 18:57:38.135 INFO Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL invoke [2]
+Jul 27 18:57:38.135 INFO Program log: Create
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]
+Jul 27 18:57:38.135 INFO Program log: Instruction: GetAccountDataSize
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 1622 of 185286 compute units
+Jul 27 18:57:38.135 INFO Program return: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA pQAAAAAAAAA=
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success
+Jul 27 18:57:38.135 INFO Program 11111111111111111111111111111111 invoke [3]
+Jul 27 18:57:38.135 INFO Program 11111111111111111111111111111111 success
+Jul 27 18:57:38.135 INFO Program log: Initialize the associated token account
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]
+Jul 27 18:57:38.135 INFO Program log: Instruction: InitializeImmutableOwner
+Jul 27 18:57:38.135 INFO Program log: Please upgrade to SPL Token 2022 for immutable owner support
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 1405 of 178646 compute units
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]
+Jul 27 18:57:38.135 INFO Program log: Instruction: InitializeAccount3
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 4241 of 174762 compute units
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success
+Jul 27 18:57:38.135 INFO Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL consumed 20544 of 190761 compute units
+Jul 27 18:57:38.135 INFO Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL success
+Jul 27 18:57:38.135 INFO Program log: the ata was made
+Jul 27 18:57:38.135 INFO Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL invoke [2]
+Jul 27 18:57:38.135 INFO Program log: Create
+Jul 27 18:57:38.135 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]
+Jul 27 18:57:38.135 INFO Program log: Instruction: GetAccountDataSize
+Jul 27 18:57:38.136 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 1622 of 160970 compute units
+Jul 27 18:57:38.136 INFO Program return: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA pQAAAAAAAAA=
+Jul 27 18:57:38.136 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success
+Jul 27 18:57:38.136 INFO Program 11111111111111111111111111111111 invoke [3]
+Jul 27 18:57:38.136 INFO Program 11111111111111111111111111111111 success
+Jul 27 18:57:38.136 INFO Program log: Initialize the associated token account
+Jul 27 18:57:38.136 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]
+Jul 27 18:57:38.136 INFO Program log: Instruction: InitializeImmutableOwner
+Jul 27 18:57:38.136 INFO Program log: Please upgrade to SPL Token 2022 for immutable owner support
+Jul 27 18:57:38.136 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 1405 of 154330 compute units
+Jul 27 18:57:38.136 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success
+Jul 27 18:57:38.136 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]
+Jul 27 18:57:38.136 INFO Program log: Instruction: InitializeAccount3
+Jul 27 18:57:38.136 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 4241 of 150446 compute units
+Jul 27 18:57:38.136 INFO Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success
+Jul 27 18:57:38.136 INFO Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL consumed 22044 of 167945 compute units
+Jul 27 18:57:38.136 INFO Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL success
+Jul 27 18:57:38.136 INFO Program log: the vault token ata was made
+Jul 27 18:57:38.136 INFO Program 11111111111111111111111111111111 invoke [2]
+Jul 27 18:57:38.136 INFO Program 11111111111111111111111111111111 success
+Jul 27 18:57:38.136 INFO Program 11111111111111111111111111111111 invoke [2]
+Jul 27 18:57:38.136 INFO Program 11111111111111111111111111111111 success
+Jul 27 18:57:38.136 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu consumed 57222 of 200000 compute units
+Jul 27 18:57:38.136 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu success
+Jul 27 18:57:38.292 INFO Account A1XXuKBFR4nY7LJ8Q1o3Y8DHKzsVjxxaRVYiwjgHc2wc updated.
+Jul 27 18:57:38.433 INFO Account 6Vz29xBqepcsziDh6ZpBLzQXHc7xVkvr6yu5XjnKmtiR updated.
+Jul 27 18:57:38.433 ERRO Transaction simulation failed: Error processing Instruction 0: Invalid account owner
+Jul 27 18:57:38.579 INFO Transaction processed 2RffUsJvd3c7bJXpQ5CH4MaNA2zUEwz5V8Zm8UZVwf3Db4L7yKfMsrst5PGnDRX2AgBAwkRsqnXXih75q5iiFq9N
+Jul 27 18:57:38.579 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu invoke [1]
+Jul 27 18:57:38.579 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu consumed 406 of 200000 compute units
+Jul 27 18:57:38.579 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu failed: Invalid account owner
+Jul 27 18:57:38.579 ERRO Transaction execution failed: Error processing Instruction 0: Invalid account owner
+Jul 27 18:57:38.748 INFO Transaction processed 3xCXWeY6r5ZN7SFaiYgFkmsHpAb143tgpgAck8qhwcNaGecoVtt3pxA4V41BU1X4p45vYFKD4YKCrkn7Z2jccDKY
+Jul 27 18:57:38.749 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu invoke [1]
+Jul 27 18:57:38.749 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu consumed 453 of 200000 compute units
+Jul 27 18:57:38.749 INFO Program pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu success
+Jul 27 18:57:38.912 ERRO Transaction simulation failed: Error processing Instruction 0: Provided seeds do not result in a valid address

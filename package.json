@@ -4,7 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bash ./run_tests.sh"
+    "build-sol": "cargo build-sbf",
+    "build-idl": "shank idl",
+    "build-cli": "npx codama run js",
+    "open-surfpool": "osascript -e 'tell application \"Terminal\"' -e 'do script \"cd $(pwd) && surfpool start\"' -e 'end tell'",
+    "close-surfpool": "osascript -e 'tell application \"Terminal\" to repeat with w in windows' -e 'repeat with t in tabs of w' -e 'if (processes of t) contains \"surfpool\" then close w' -e 'end repeat' -e 'end repeat'",
+    "e2e": "npx tsx e2e/e2e.ts",
+    "test": "npm run build-sol && npm run build-idl && npm run build-cli && npm run open-surfpool && sleep 3 && npm run e2e && npm run close-surfpool"
   },
   "dependencies": {
     "@codama/cli": "^1.2.0",
@@ -20,6 +26,7 @@
     "@solana/wallet-standard-features": "^1.3.0",
     "@wallet-standard/core": "^1.1.1",
     "@wallet-standard/react": "^1.0.1",
+    "buffer-layout": "^1.2.2",
     "codama": "^1.3.0",
     "concurrently": "^9.2.0",
     "gill": "^0.10.2",

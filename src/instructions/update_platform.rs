@@ -119,6 +119,11 @@ impl<'info> UpdatePlatform<'info> {
             .authority
             .ne(self.accounts.old_authority.key())
         {
+            log!(
+                "Current authority: {} | Expected: {}",
+                &platform_state.authority,
+                self.accounts.old_authority.key()
+            );
             return Err(ProgramError::IncorrectAuthority);
         }
 

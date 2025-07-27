@@ -207,7 +207,7 @@ impl<'info> RedeemWinnings<'info> {
         // Redeem winnings
 
         let voted_true = position_state.side != 0;
-        let total_true = u64::from_be_bytes(vote_state.true_votes);
+        let total_true = u64::from_le_bytes(vote_state.true_votes);
         let total_false = u64::from_le_bytes(vote_state.false_votes);
         let winning_side = if total_true > total_false {
             Some(true)

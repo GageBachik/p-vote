@@ -50,6 +50,7 @@ export type InitializeVoteInstruction<
   TAccountToken extends string | AccountMeta<string> = string,
   TAccountVoteVault extends string | AccountMeta<string> = string,
   TAccountVoteVaultTokenAccount extends string | AccountMeta<string> = string,
+  TAccountVaultTokenAccount extends string | AccountMeta<string> = string,
   TAccountRent extends
     | string
     | AccountMeta<string> = 'SysvarRent111111111111111111111111111111111',
@@ -87,6 +88,9 @@ export type InitializeVoteInstruction<
       TAccountVoteVaultTokenAccount extends string
         ? WritableAccount<TAccountVoteVaultTokenAccount>
         : TAccountVoteVaultTokenAccount,
+      TAccountVaultTokenAccount extends string
+        ? WritableAccount<TAccountVaultTokenAccount>
+        : TAccountVaultTokenAccount,
       TAccountRent extends string
         ? ReadonlyAccount<TAccountRent>
         : TAccountRent,
@@ -147,6 +151,7 @@ export type InitializeVoteInput<
   TAccountToken extends string = string,
   TAccountVoteVault extends string = string,
   TAccountVoteVaultTokenAccount extends string = string,
+  TAccountVaultTokenAccount extends string = string,
   TAccountRent extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountTokenProgram extends string = string,
@@ -166,6 +171,8 @@ export type InitializeVoteInput<
   voteVault: Address<TAccountVoteVault>;
   /** votes token account for storing funds */
   voteVaultTokenAccount: Address<TAccountVoteVaultTokenAccount>;
+  /** votes token account for storing funds */
+  vaultTokenAccount: Address<TAccountVaultTokenAccount>;
   /** Rent program */
   rent?: Address<TAccountRent>;
   /** System program */
@@ -185,6 +192,7 @@ export function getInitializeVoteInstruction<
   TAccountToken extends string,
   TAccountVoteVault extends string,
   TAccountVoteVaultTokenAccount extends string,
+  TAccountVaultTokenAccount extends string,
   TAccountRent extends string,
   TAccountSystemProgram extends string,
   TAccountTokenProgram extends string,
@@ -199,6 +207,7 @@ export function getInitializeVoteInstruction<
     TAccountToken,
     TAccountVoteVault,
     TAccountVoteVaultTokenAccount,
+    TAccountVaultTokenAccount,
     TAccountRent,
     TAccountSystemProgram,
     TAccountTokenProgram,
@@ -214,6 +223,7 @@ export function getInitializeVoteInstruction<
   TAccountToken,
   TAccountVoteVault,
   TAccountVoteVaultTokenAccount,
+  TAccountVaultTokenAccount,
   TAccountRent,
   TAccountSystemProgram,
   TAccountTokenProgram,
@@ -232,6 +242,10 @@ export function getInitializeVoteInstruction<
     voteVault: { value: input.voteVault ?? null, isWritable: true },
     voteVaultTokenAccount: {
       value: input.voteVaultTokenAccount ?? null,
+      isWritable: true,
+    },
+    vaultTokenAccount: {
+      value: input.vaultTokenAccount ?? null,
       isWritable: true,
     },
     rent: { value: input.rent ?? null, isWritable: false },
@@ -274,6 +288,7 @@ export function getInitializeVoteInstruction<
       getAccountMeta(accounts.token),
       getAccountMeta(accounts.voteVault),
       getAccountMeta(accounts.voteVaultTokenAccount),
+      getAccountMeta(accounts.vaultTokenAccount),
       getAccountMeta(accounts.rent),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.tokenProgram),
@@ -292,6 +307,7 @@ export function getInitializeVoteInstruction<
     TAccountToken,
     TAccountVoteVault,
     TAccountVoteVaultTokenAccount,
+    TAccountVaultTokenAccount,
     TAccountRent,
     TAccountSystemProgram,
     TAccountTokenProgram,
@@ -321,14 +337,16 @@ export type ParsedInitializeVoteInstruction<
     voteVault: TAccountMetas[5];
     /** votes token account for storing funds */
     voteVaultTokenAccount: TAccountMetas[6];
+    /** votes token account for storing funds */
+    vaultTokenAccount: TAccountMetas[7];
     /** Rent program */
-    rent: TAccountMetas[7];
+    rent: TAccountMetas[8];
     /** System program */
-    systemProgram: TAccountMetas[8];
+    systemProgram: TAccountMetas[9];
     /** Token program */
-    tokenProgram: TAccountMetas[9];
+    tokenProgram: TAccountMetas[10];
     /** Associated Token program */
-    associatedTokenProgram: TAccountMetas[10];
+    associatedTokenProgram: TAccountMetas[11];
   };
   data: InitializeVoteInstructionData;
 };
@@ -341,7 +359,7 @@ export function parseInitializeVoteInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedInitializeVoteInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 11) {
+  if (instruction.accounts.length < 12) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -361,6 +379,7 @@ export function parseInitializeVoteInstruction<
       token: getNextAccount(),
       voteVault: getNextAccount(),
       voteVaultTokenAccount: getNextAccount(),
+      vaultTokenAccount: getNextAccount(),
       rent: getNextAccount(),
       systemProgram: getNextAccount(),
       tokenProgram: getNextAccount(),
