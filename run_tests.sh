@@ -18,7 +18,7 @@ echo "Waiting for surfpool to initialize..."
 sleep 3
 
 echo "Running full e2e tests..."
-npx tsx e2e/final_tests.ts
+npx tsx e2e/tests.ts
 TEST_RESULT=$?
 
 echo "Stopping surfpool..."

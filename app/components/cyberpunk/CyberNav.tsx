@@ -1,25 +1,29 @@
 "use client";
 
-import { useContext, useState } from 'react';
-import { ChevronDown, Settings } from 'lucide-react';
+import { useContext, useState } from "react";
+import { ChevronDown, Settings } from "lucide-react";
 
-import { ChainContext } from '../../context/ChainContext';
-import { SelectedWalletAccountContext } from '../../context/SelectedWalletAccountContext';
-import { CyberButton } from './CyberButton';
-import { CyberSignInMenu } from './CyberSignInMenu';
+import { ChainContext } from "../../context/ChainContext";
+import { SelectedWalletAccountContext } from "../../context/SelectedWalletAccountContext";
+import { CyberButton } from "./CyberButton";
+import { CyberSignInMenu } from "./CyberSignInMenu";
 
 export function CyberNav() {
-  const { displayName: currentChainName, chain, setChain } = useContext(ChainContext);
+  const {
+    displayName: currentChainName,
+    chain,
+    setChain,
+  } = useContext(ChainContext);
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [isChainDropdownOpen, setIsChainDropdownOpen] = useState(false);
 
   const chains = [
-    { id: 'solana:devnet' as const, name: 'DEVNET' },
-    { id: 'solana:testnet' as const, name: 'TESTNET' },
-    ...(process.env.REACT_EXAMPLE_APP_ENABLE_MAINNET === 'true' 
-      ? [{ id: 'solana:mainnet' as const, name: 'MAINNET_BETA' }] 
-      : [])
+    { id: "solana:devnet" as const, name: "DEVNET" },
+    { id: "solana:testnet" as const, name: "TESTNET" },
+    ...(process.env.REACT_EXAMPLE_APP_ENABLE_MAINNET === "true"
+      ? [{ id: "solana:mainnet" as const, name: "MAINNET_BETA" }]
+      : []),
   ];
 
   return (
@@ -30,8 +34,8 @@ export function CyberNav() {
             <h1 className="text-xl md:text-2xl font-bold cyber-font cyber-green">
               DEGENVOTE_SYSTEM
             </h1>
-            
-            {setChain && (
+
+            {/* {setChain && (
               <div className="relative">
                 <button
                   onClick={() => setIsChainDropdownOpen(!isChainDropdownOpen)}
@@ -71,27 +75,27 @@ export function CyberNav() {
                   </div>
                 )}
               </div>
-            )}
+            )} */}
           </div>
-          
+
           <div className="flex items-center space-x-3">
             {!selectedWalletAccount && (
-              <CyberButton 
+              <CyberButton
                 variant="green"
                 onClick={() => setIsSignInModalOpen(true)}
               >
                 [CONNECT_WALLET]
               </CyberButton>
             )}
-            
+
             <button className="cyber-hover p-2 cyber-pink">
               <Settings className="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
-      
-      <CyberSignInMenu 
+
+      <CyberSignInMenu
         isOpen={isSignInModalOpen}
         onClose={() => setIsSignInModalOpen(false)}
       />

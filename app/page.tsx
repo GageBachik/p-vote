@@ -21,22 +21,22 @@ function DegenVoteApp() {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const { toasts, addToast, removeToast } = useToasts();
-  
+
   // Initialize cyberpunk effects
   useCyberpunkEffects();
 
   return (
     <div className="min-h-screen">
       <DataStreams />
-      
+
       {selectedWalletAccount ? (
         <>
-          <DegenHeader 
+          <DegenHeader
             onVoteCreated={(voteId) => {
               addToast({
-                type: 'success',
-                title: 'VOTE_CREATED_SUCCESSFULLY',
-                message: `Vote ID: ${voteId.slice(-8)}`
+                type: "success",
+                title: "VOTE_CREATED_SUCCESSFULLY",
+                message: `Vote ID: ${voteId.slice(-8)}`,
               });
             }}
           />
@@ -50,7 +50,7 @@ function DegenVoteApp() {
           <CyberNav />
           <div className="flex-1 flex items-center justify-center">
             <div className="terminal-window neon-glow-green p-8 text-center">
-              <div 
+              <div
                 className="terminal-header mb-4 cyber-hover cursor-pointer"
                 onClick={() => setIsSignInModalOpen(true)}
               >
@@ -72,8 +72,8 @@ function DegenVoteApp() {
           </div>
         </div>
       )}
-      
-      <CyberSignInMenu 
+
+      <CyberSignInMenu
         isOpen={isSignInModalOpen}
         onClose={() => setIsSignInModalOpen(false)}
       />

@@ -1,16 +1,16 @@
 "use client";
 
-import { SolanaSignIn } from '@solana/wallet-standard-features';
-import type { UiWallet } from '@wallet-standard/react';
-import { useWallets } from '@wallet-standard/react';
-import { useContext, useRef, useState } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
-import { AlertTriangle } from 'lucide-react';
+import { SolanaSignIn } from "@solana/wallet-standard-features";
+import type { UiWallet } from "@wallet-standard/react";
+import { useWallets } from "@wallet-standard/react";
+import { useContext, useRef, useState } from "react";
+import { ErrorBoundary } from "react-error-boundary";
+import { AlertTriangle } from "lucide-react";
 
-import { SelectedWalletAccountContext } from '../../context/SelectedWalletAccountContext';
-import { CyberModal } from './CyberModal';
-import { CyberSignInMenuItem } from './CyberSignInMenuItem';
-import { CyberUnconnectableWalletMenuItem } from './CyberUnconnectableWalletMenuItem';
+import { SelectedWalletAccountContext } from "../../context/SelectedWalletAccountContext";
+import { CyberModal } from "./CyberModal";
+import { CyberSignInMenuItem } from "./CyberSignInMenuItem";
+import { CyberUnconnectableWalletMenuItem } from "./CyberUnconnectableWalletMenuItem";
 
 interface CyberSignInMenuProps {
   isOpen: boolean;
@@ -20,7 +20,9 @@ interface CyberSignInMenuProps {
 export function CyberSignInMenu({ isOpen, onClose }: CyberSignInMenuProps) {
   const { current: NO_ERROR } = useRef(Symbol());
   const wallets = useWallets();
-  const [_, setSelectedWalletAccount] = useContext(SelectedWalletAccountContext);
+  const [_, setSelectedWalletAccount] = useContext(
+    SelectedWalletAccountContext
+  );
   const [error, setError] = useState(NO_ERROR);
 
   function renderItem(wallet: UiWallet) {
@@ -32,7 +34,7 @@ export function CyberSignInMenu({ isOpen, onClose }: CyberSignInMenuProps) {
         key={`wallet:${wallet.name}`}
       >
         <CyberSignInMenuItem
-          onSignIn={account => {
+          onConnect={(account) => {
             setSelectedWalletAccount(account);
             onClose();
           }}
@@ -51,8 +53,8 @@ export function CyberSignInMenu({ isOpen, onClose }: CyberSignInMenuProps) {
   }
 
   return (
-    <CyberModal 
-      isOpen={isOpen} 
+    <CyberModal
+      isOpen={isOpen}
       onClose={onClose}
       title="WALLET_AUTHENTICATION.exe - SELECT_PROTOCOL"
     >
@@ -75,9 +77,9 @@ export function CyberSignInMenu({ isOpen, onClose }: CyberSignInMenuProps) {
                   NO_COMPATIBLE_WALLETS_DETECTED
                 </div>
                 <div className="text-xs cyber-cyan mt-1">
-                  Install a wallet that supports{' '}
-                  <a 
-                    href="https://phantom.app/learn/developers/sign-in-with-solana" 
+                  Install a wallet that supports{" "}
+                  <a
+                    href="https://phantom.app/learn/developers/sign-in-with-solana"
                     target="_blank"
                     className="cyber-green hover:cyber-yellow underline"
                   >

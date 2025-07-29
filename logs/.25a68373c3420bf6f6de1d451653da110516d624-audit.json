@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/loser/projects/p-vote/logs/.25a68373c3420bf6f6de1d451653da110516d624-audit.json",
+    "files": [
+        {
+            "date": 1753651708774,
+            "name": "/Users/loser/projects/p-vote/logs/mcp-puppeteer-2025-07-27.log",
+            "hash": "1127c3b4652d42ccfdacfec186f55fa3925198e1b63ccdae9d08d770a5e418d2"
+        },
+        {
+            "date": 1753745029894,
+            "name": "/Users/loser/projects/p-vote/logs/mcp-puppeteer-2025-07-28.log",
+            "hash": "121def23c2b3cb243cbcb1567ecf7e4302417101e1120dfc504db9a595d14f65"
+        }
+    ],
+    "hashType": "sha256"
+}

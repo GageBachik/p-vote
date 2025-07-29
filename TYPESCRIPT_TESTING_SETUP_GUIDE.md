@@ -5,6 +5,7 @@ This guide provides a complete setup for TypeScript testing with Codama client g
 ## Overview
 
 This testing setup follows a specific workflow:
+
 1. **Build Program**: Compile the Rust Solana program
 2. **Generate IDL**: Extract Interface Definition Language from the program using Shank
 3. **Generate Clients**: Use Codama to generate TypeScript (and potentially Rust/Python) clients from the IDL
@@ -12,6 +13,7 @@ This testing setup follows a specific workflow:
 5. **Execute Tests**: Run end-to-end tests against the local validator
 
 ### Key Components:
+
 - **Codama**: IDL-based client generation for multiple languages
 - **Gill**: Modern Solana TypeScript SDK
 - **Surfpool**: Enhanced Solana test validator with mainnet program access
@@ -69,6 +71,7 @@ surfpool start
 ```
 
 When you first run `surfpool start`, it will prompt you to create project configuration files:
+
 - **Accept ALL defaults** when prompted
 - This creates configuration files that automatically deploy your Pinocchio program on startup
 - This setup ensures your program is available every time Surfpool starts
@@ -96,7 +99,7 @@ When you first run `surfpool start`, it will prompt you to create project config
     "@codama/renderers-js": "^1.3.1",
     "@codama/renderers-rust": "^1.1.2",
     "codama": "^1.3.0",
-    "gill": "^0.10.2",
+    "gill": "^0.10.2"
   },
   "devDependencies": {
     "@types/node": "^20",
@@ -109,39 +112,41 @@ When you first run `surfpool start`, it will prompt you to create project config
 
 ```javascript
 import { createCodamaConfig } from "gill";
- 
-export default createCodamaConfig({
-  idl: "idl/your_program.json",
-  clientJs: "clients/js/src/generated",
-},
-{
-  "idl": "program/idl.json",
-  "before": [],
-  "scripts": {
-    "js": {
-      "from": "@codama/renderers-js",
-      "args": [
-        "clients/js/src/generated",
-        {
-          "dependencyMap": {
-            "solanaAccounts": "gill",
-            "solanaAddresses": "gill",
-            "solanaCodecsCore": "gill",
-            "solanaCodecsDataStructures": "gill",
-            "solanaCodecsNumbers": "gill",
-            "solanaCodecsStrings": "gill",
-            "solanaErrors": "gill",
-            "solanaInstructions": "gill",
-            "solanaOptions": "gill",
-            "solanaPrograms": "gill",
-            "solanaRpcTypes": "gill",
-            "solanaSigners": "gill"
-          }
-        }
-      ]
-    }
+
+export default createCodamaConfig(
+  {
+    idl: "idl/your_program.json",
+    clientJs: "clients/js/src/generated",
+  },
+  {
+    idl: "program/idl.json",
+    before: [],
+    scripts: {
+      js: {
+        from: "@codama/renderers-js",
+        args: [
+          "clients/js/src/generated",
+          {
+            dependencyMap: {
+              solanaAccounts: "gill",
+              solanaAddresses: "gill",
+              solanaCodecsCore: "gill",
+              solanaCodecsDataStructures: "gill",
+              solanaCodecsNumbers: "gill",
+              solanaCodecsStrings: "gill",
+              solanaErrors: "gill",
+              solanaInstructions: "gill",
+              solanaOptions: "gill",
+              solanaPrograms: "gill",
+              solanaRpcTypes: "gill",
+              solanaSigners: "gill",
+            },
+          },
+        ],
+      },
+    },
   }
-});
+);
 ```
 
 ### 3. Understanding the Build Pipeline
@@ -282,30 +287,30 @@ When testing Solana programs, you often need to interact with existing mainnet p
 
 ```typescript
 import { loadKeypairSignerFromFile } from "gill/node";
-import { 
-    TOKEN_PROGRAM_ADDRESS, 
-    getAssociatedTokenAccountAddress, 
-    ASSOCIATED_TOKEN_PROGRAM_ADDRESS 
+import {
+  TOKEN_PROGRAM_ADDRESS,
+  getAssociatedTokenAccountAddress,
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
 } from "gill/programs/token";
-import { 
-    createSolanaClient, 
-    createTransaction, 
-    address, 
-    getAddressEncoder, 
-    getProgramDerivedAddress, 
-    generateKeyPairSigner 
+import {
+  createSolanaClient,
+  createTransaction,
+  address,
+  getAddressEncoder,
+  getProgramDerivedAddress,
+  generateKeyPairSigner,
 } from "gill";
 import * as programClient from "../clients/js/src/generated";
 
 // Your program ID
-const PROGRAM_ID = address('YOUR_PROGRAM_ID_HERE');
+const PROGRAM_ID = address("YOUR_PROGRAM_ID_HERE");
 
 // Load authority keypair
 const authority = await loadKeypairSignerFromFile("~/.config/solana/id.json");
 
 // Create Solana client
 const { rpc, sendAndConfirmTransaction } = createSolanaClient({
-    urlOrMoniker: "localnet",
+  urlOrMoniker: "localnet",
 });
 
 // Get latest blockhash
@@ -320,18 +325,16 @@ const enc = getAddressEncoder();
 
 // Derive PDAs
 const [platformPda, platformBump] = await getProgramDerivedAddress({
-    programAddress: PROGRAM_ID,
-    seeds: [
-        "config"  // Your seed string
-        // enc.encode(address('some_address')) // For address seeds
-    ]
+  programAddress: PROGRAM_ID,
+  seeds: [
+    "config", // Your seed string
+    // enc.encode(address('some_address')) // For address seeds
+  ],
 });
 
 const [vaultPda, vaultBump] = await getProgramDerivedAddress({
-    programAddress: PROGRAM_ID,
-    seeds: [ 
-        enc.encode(platformPda) 
-    ]
+  programAddress: PROGRAM_ID,
+  seeds: [enc.encode(platformPda)],
 });
 ```
 
@@ -344,22 +347,22 @@ fee.writeUInt16LE(500); // 5% fee in basis points
 
 // Create instruction using generated client
 const initPlatIx = programClient.getInitializePlatformInstruction({
-    authority: authority,
-    platform: platformPda,
-    vault: vaultPda,
-    fee: fee,
-    vaultBump: vaultBump,
-    platformBump: platformBump
+  authority: authority,
+  platform: platformPda,
+  vault: vaultPda,
+  fee: fee,
+  vaultBump: vaultBump,
+  platformBump: platformBump,
 });
 
 // Create and send transaction
 const transaction = createTransaction({
-    version: "legacy",
-    feePayer: authority,
-    instructions: [initPlatIx],
-    latestBlockhash,
-    computeUnitLimit: 50_000,
-    computeUnitPrice: 1_000,
+  version: "legacy",
+  feePayer: authority,
+  instructions: [initPlatIx],
+  latestBlockhash,
+  computeUnitLimit: 50_000,
+  computeUnitPrice: 1_000,
 });
 
 const result = await sendAndConfirmTransaction(transaction);
@@ -374,17 +377,17 @@ const newAccount = await generateKeyPairSigner();
 
 // Get associated token account address
 const tokenAccount = await getAssociatedTokenAccountAddress(
-    tokenMint, 
-    newAccount.address
+  tokenMint,
+  newAccount.address
 );
 
 // Use in instruction
 const instruction = programClient.getYourInstructionInstruction({
-    authority,
-    targetAccount: newAccount,
-    tokenAccount: tokenAccount,
-    associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-    // ... other parameters
+  authority,
+  targetAccount: newAccount,
+  tokenAccount: tokenAccount,
+  associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  // ... other parameters
 });
 ```
 
@@ -393,73 +396,72 @@ const instruction = programClient.getYourInstructionInstruction({
 ```typescript
 // Test: Initialize Platform and Create Vote
 async function testPlatformAndVote() {
-    try {
-        // 1. Initialize Platform
-        const fee = Buffer.alloc(2);
-        fee.writeUInt16LE(500);
-        
-        const initPlatIx = programClient.getInitializePlatformInstruction({
-            authority,
-            platform: platformPda,
-            vault: vaultPda,
-            fee,
-            vaultBump,
-            platformBump
-        });
-        
-        const initPlatformTx = createTransaction({
-            version: "legacy",
-            feePayer: authority,
-            instructions: [initPlatIx],
-            latestBlockhash,
-            computeUnitLimit: 50_000,
-            computeUnitPrice: 1_000,
-        });
-        
-        const platformResult = await sendAndConfirmTransaction(initPlatformTx);
-        console.log("✅ Platform initialized:", platformResult);
-        
-        // 2. Create Vote
-        const vote = await generateKeyPairSigner();
-        const [voteVaultPda] = await getProgramDerivedAddress({
-            programAddress: PROGRAM_ID,
-            seeds: [enc.encode(vote.address)]
-        });
-        
-        const timeToAdd = Buffer.alloc(8);
-        timeToAdd.writeBigInt64LE(86400n); // 24 hours
-        
-        const initVoteIx = programClient.getInitializeVoteInstruction({
-            authority,
-            platform: platformPda,
-            vault: vaultPda,
-            vote: vote,
-            token: tokenMint,
-            voteVault: voteVaultPda,
-            voteVaultTokenAccount: await getAssociatedTokenAccountAddress(
-                tokenMint, 
-                voteVaultPda
-            ),
-            associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-            timeToAdd
-        });
-        
-        const initVoteTx = createTransaction({
-            version: "legacy",
-            feePayer: authority,
-            instructions: [initVoteIx],
-            latestBlockhash,
-            computeUnitLimit: 100_000,
-            computeUnitPrice: 1_000,
-        });
-        
-        const voteResult = await sendAndConfirmTransaction(initVoteTx);
-        console.log("✅ Vote initialized:", voteResult);
-        
-    } catch (error) {
-        console.error("❌ Test failed:", error);
-        throw error;
-    }
+  try {
+    // 1. Initialize Platform
+    const fee = Buffer.alloc(2);
+    fee.writeUInt16LE(500);
+
+    const initPlatIx = programClient.getInitializePlatformInstruction({
+      authority,
+      platform: platformPda,
+      vault: vaultPda,
+      fee,
+      vaultBump,
+      platformBump,
+    });
+
+    const initPlatformTx = createTransaction({
+      version: "legacy",
+      feePayer: authority,
+      instructions: [initPlatIx],
+      latestBlockhash,
+      computeUnitLimit: 50_000,
+      computeUnitPrice: 1_000,
+    });
+
+    const platformResult = await sendAndConfirmTransaction(initPlatformTx);
+    console.log("✅ Platform initialized:", platformResult);
+
+    // 2. Create Vote
+    const vote = await generateKeyPairSigner();
+    const [voteVaultPda] = await getProgramDerivedAddress({
+      programAddress: PROGRAM_ID,
+      seeds: [enc.encode(vote.address)],
+    });
+
+    const timeToAdd = Buffer.alloc(8);
+    timeToAdd.writeBigInt64LE(86400n); // 24 hours
+
+    const initVoteIx = programClient.getInitializeVoteInstruction({
+      authority,
+      platform: platformPda,
+      vault: vaultPda,
+      vote: vote,
+      token: tokenMint,
+      voteVault: voteVaultPda,
+      voteVaultTokenAccount: await getAssociatedTokenAccountAddress(
+        tokenMint,
+        voteVaultPda
+      ),
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+      timeToAdd,
+    });
+
+    const initVoteTx = createTransaction({
+      version: "legacy",
+      feePayer: authority,
+      instructions: [initVoteIx],
+      latestBlockhash,
+      computeUnitLimit: 100_000,
+      computeUnitPrice: 1_000,
+    });
+
+    const voteResult = await sendAndConfirmTransaction(initVoteTx);
+    console.log("✅ Vote initialized:", voteResult);
+  } catch (error) {
+    console.error("❌ Test failed:", error);
+    throw error;
+  }
 }
 
 // Run the test
@@ -495,10 +497,10 @@ Generated account types with proper validation:
 ```typescript
 // Account input types are generated based on your IDL
 type YourInstructionInput = {
-    authority: TransactionSigner<string>;
-    targetAccount: Address<string>;
-    param1: number;
-    param2: ReadonlyUint8Array;
+  authority: TransactionSigner<string>;
+  targetAccount: Address<string>;
+  param1: number;
+  param2: ReadonlyUint8Array;
 };
 ```
 
@@ -507,8 +509,8 @@ type YourInstructionInput = {
 ```typescript
 // Instruction data encoding is handled automatically
 const instructionData = getYourInstructionDataEncoder().encode({
-    param1: 123,
-    param2: buffer
+  param1: 123,
+  param2: buffer,
 });
 
 // Parsing received instruction data
@@ -523,23 +525,23 @@ console.log(parsed.data.param1);
 ```typescript
 // Group related tests
 describe("Platform Tests", () => {
-    test("Initialize Platform", async () => {
-        // Test implementation
-    });
-    
-    test("Update Platform", async () => {
-        // Test implementation
-    });
+  test("Initialize Platform", async () => {
+    // Test implementation
+  });
+
+  test("Update Platform", async () => {
+    // Test implementation
+  });
 });
 
 describe("Vote Tests", () => {
-    test("Create Vote", async () => {
-        // Test implementation
-    });
-    
-    test("Cast Vote", async () => {
-        // Test implementation
-    });
+  test("Create Vote", async () => {
+    // Test implementation
+  });
+
+  test("Cast Vote", async () => {
+    // Test implementation
+  });
 });
 ```
 
@@ -547,15 +549,15 @@ describe("Vote Tests", () => {
 
 ```typescript
 async function testErrorCondition() {
-    try {
-        // This should fail
-        await sendAndConfirmTransaction(invalidTransaction);
-        throw new Error("Expected transaction to fail");
-    } catch (error) {
-        // Verify specific error
-        expect(error.message).toContain("Expected error message");
-        console.log("✅ Error handled correctly");
-    }
+  try {
+    // This should fail
+    await sendAndConfirmTransaction(invalidTransaction);
+    throw new Error("Expected transaction to fail");
+  } catch (error) {
+    // Verify specific error
+    expect(error.message).toContain("Expected error message");
+    console.log("✅ Error handled correctly");
+  }
 }
 ```
 
@@ -564,24 +566,25 @@ async function testErrorCondition() {
 ```typescript
 // Verify account state after instruction
 async function verifyAccountState(accountAddress: Address) {
-    const accountInfo = await rpc.getAccountInfo(accountAddress).send();
-    
-    if (!accountInfo.value) {
-        throw new Error("Account not found");
-    }
-    
-    // Decode account data using generated types
-    const accountData = decodeYourAccountData(accountInfo.value.data);
-    
-    // Verify expected values
-    expect(accountData.field1).toBe(expectedValue);
-    console.log("✅ Account state verified");
+  const accountInfo = await rpc.getAccountInfo(accountAddress).send();
+
+  if (!accountInfo.value) {
+    throw new Error("Account not found");
+  }
+
+  // Decode account data using generated types
+  const accountData = decodeYourAccountData(accountInfo.value.data);
+
+  // Verify expected values
+  expect(accountData.field1).toBe(expectedValue);
+  console.log("✅ Account state verified");
 }
 ```
 
 ## Development Workflow
 
 ### 1. Initial Project Setup (One-time)
+
 ```bash
 # Clone or create your project
 cd your-solana-project
@@ -597,6 +600,7 @@ surfpool start
 ```
 
 ### 2. Regular Development Cycle
+
 ```bash
 # Edit your Rust code
 vim src/instructions/your_instruction.rs
@@ -606,6 +610,7 @@ npm test
 ```
 
 ### 3. Manual Testing/Debugging
+
 ```bash
 # Run individual pipeline steps for debugging
 cargo build-sbf          # Build program
@@ -618,6 +623,7 @@ npx tsx e2e/e2e.ts     # Run tests
 ### 4. Understanding the Generated Files
 
 After running the pipeline, you'll have:
+
 ```
 ├── target/deploy/your_program.so    # Compiled program
 ├── idl/your_program.json           # Generated IDL
@@ -633,24 +639,24 @@ After running the pipeline, you'll have:
 
 ### Common Issues
 
-1. **"run_tests.sh fails immediately"**: 
+1. **"run_tests.sh fails immediately"**:
    - **Solution**: You must run `surfpool start` once in your project directory and accept all defaults before running tests
    - This creates the necessary configuration files for automatic program deployment
 
-2. **"Surfpool not starting"**: 
+2. **"Surfpool not starting"**:
    - Ensure surfpool is installed: `cargo install surfpool`
    - Check if port 8899 is already in use: `lsof -i :8899`
 
-3. **"IDL generation fails"**: 
+3. **"IDL generation fails"**:
    - Check your Shank annotations in Rust code
    - Ensure all instruction structs have proper `#[derive(ShankInstruction)]`
    - Verify account annotations are correct
 
-4. **"Client generation fails"**: 
+4. **"Client generation fails"**:
    - Verify `codama.js` configuration matches your IDL path
    - Check that IDL was generated successfully: `cat idl/your_program.json`
 
-5. **"Transaction fails with program not found"**: 
+5. **"Transaction fails with program not found"**:
    - Ensure Surfpool initialization was completed (accept defaults)
    - Check that your program ID in tests matches the one in `lib.rs`
    - Verify Surfpool deployed your program (check logs on startup)
@@ -671,7 +677,7 @@ tree clients/js/src/generated/
 # Test RPC connection to Surfpool
 curl -X POST -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"getHealth"}' \
-  http://localhost:8899
+  http://api.devnet.solana.com
 
 # Check Surfpool configuration
 cat surfpool.toml

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fira_Code, Oxanium } from "next/font/google";
 import "./globals.css";
+import * as Tooltip from "@radix-ui/react-tooltip";
 
 const firaCode = Fira_Code({
   variable: "--font-fira-code",
@@ -26,10 +27,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${firaCode.variable} ${oxanium.variable} antialiased`}
-      >
-        {children}
+      <body className={`${firaCode.variable} ${oxanium.variable} antialiased`}>
+        <Tooltip.Provider delayDuration={200}>{children}</Tooltip.Provider>
       </body>
     </html>
   );

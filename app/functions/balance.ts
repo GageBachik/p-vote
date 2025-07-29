@@ -1,5 +1,6 @@
-import { AccountNotificationsApi, Address, GetBalanceApi, Lamports, Rpc, RpcSubscriptions } from '@solana/kit';
+import { AccountNotificationsApi, Address, GetBalanceApi, Lamports, Rpc, RpcSubscriptions, GetTokenAccountBalanceApi } from '@solana/kit';
 import { SWRSubscription } from 'swr/subscription';
+import { fetchToken, decodeToken } from 'gill/programs/token';
 
 const EXPLICIT_ABORT_TOKEN = Symbol();
 
@@ -15,24 +16,25 @@ const EXPLICIT_ABORT_TOKEN = Symbol();
  * higher slot (ie. is newer) than the last one you published to the consumer.
  */
 export function balanceSubscribe(
-  rpc: Rpc<GetBalanceApi>,
+  rpc: Rpc<GetTokenAccountBalanceApi>,
   rpcSubscriptions: RpcSubscriptions<AccountNotificationsApi>,
-  ...subscriptionArgs: Parameters<SWRSubscription<{ address: Address }, Lamports>>
+  ...subscriptionArgs: Parameters<SWRSubscription<{ address: Address }, number>>
 ) {
   const [{ address }, { next }] = subscriptionArgs;
   const abortController = new AbortController();
   // Keep track of the slot of the last-published update.
   let lastUpdateSlot = -1n;
   // Fetch the current balance of this account.
-  rpc.getBalance(address, { commitment: 'confirmed' })
+  rpc.getTokenAccountBalance(address, { commitment: 'confirmed' })
     .send({ abortSignal: abortController.signal })
-    .then(({ context: { slot }, value: lamports }) => {
+    .then(({ context: { slot }, value: account }) => {
       if (slot < lastUpdateSlot) {
         // The last-published update (ie. from the subscription) is newer than this one.
         return;
       }
       lastUpdateSlot = slot;
-      next(null /* err */, lamports /* data */);
+      console.log("Fetched initial balance for", address, ":", account.uiAmount!);
+      next(null /* err */, account.uiAmount! /* data */);
     })
     .catch(e => {
       if (e !== EXPLICIT_ABORT_TOKEN) {
@@ -47,15 +49,19 @@ export function balanceSubscribe(
       try {
         for await (const {
           context: { slot },
-          value: { lamports },
+          value: { data },
         } of accountInfoNotifications) {
           if (slot < lastUpdateSlot) {
             // The last-published update (ie. from the initial fetch) is newer than this
             // one.
             continue;
           }
+          console.log("Received update for", address, ":", data);
+          // Parse token account layout from raw data
+          const account = await fetchToken(rpc as any, address);
+
           lastUpdateSlot = slot;
-          next(null /* err */, lamports /* data */);
+          next(null /* err */, Number(account.data.amount) / 1_000_000) /* data */;
         }
       } catch (e) {
         next(e /* err */);

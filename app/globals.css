@@ -53,6 +53,7 @@ body::before {
 .bg-cyber-cyan { background-color: #00ffff; }
 .bg-cyber-purple { background-color: #8000ff; }
 .bg-cyber-orange { background-color: #ff8000; }
+.bg-cyber-yellow { background-color: #ffff00; }
 .bg-cyber-dark { background-color: rgba(0, 0, 0, 0.8); }
 .bg-cyber-darker { background-color: rgba(0, 0, 0, 0.9); }
 
@@ -79,6 +80,14 @@ body::before {
         0 0 10px #00ffff,
         0 0 20px #00ffff,
         0 0 40px #00ffff;
+}
+
+.neon-glow-yellow {
+    box-shadow: 
+        0 0 5px #ffff00,
+        0 0 10px #ffff00,
+        0 0 20px #ffff00,
+        0 0 40px #ffff00;
 }
 
 .neon-border-green {

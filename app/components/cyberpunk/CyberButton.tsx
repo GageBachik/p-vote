@@ -5,7 +5,7 @@ import { ReactNode } from "react";
 interface CyberButtonProps {
   children: ReactNode;
   onClick?: () => void;
-  variant?: "green" | "pink" | "cyan";
+  variant?: "green" | "pink" | "cyan" | "yellow";
   className?: string;
   disabled?: boolean;
 }
@@ -20,7 +20,8 @@ export function CyberButton({
   const variantClasses = {
     green: "neon-glow-green bg-cyber-green text-black",
     pink: "neon-glow-pink bg-cyber-pink text-black", 
-    cyan: "neon-glow-cyan bg-cyber-cyan text-black"
+    cyan: "neon-glow-cyan bg-cyber-cyan text-black",
+    yellow: "neon-glow-yellow bg-cyber-yellow text-black"
   }[variant];
 
   return (

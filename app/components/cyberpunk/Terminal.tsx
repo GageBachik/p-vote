@@ -6,14 +6,15 @@ interface TerminalProps {
   header: string;
   className?: string;
   children: ReactNode;
-  glowColor?: "green" | "pink" | "cyan";
+  glowColor?: "green" | "pink" | "cyan" | "yellow";
 }
 
 export function Terminal({ header, className = "", children, glowColor = "green" }: TerminalProps) {
   const glowClass = {
     green: "neon-glow-green",
     pink: "neon-glow-pink", 
-    cyan: "neon-glow-cyan"
+    cyan: "neon-glow-cyan",
+    yellow: "neon-glow-yellow"
   }[glowColor];
 
   return (
