@@ -30,7 +30,7 @@ export function useVotes(
       setError(null);
 
       const searchParams = new URLSearchParams();
-      
+
       // Add filters to search params
       if (filters.status) searchParams.set('status', filters.status);
       if (filters.category) searchParams.set('category', filters.category);
@@ -47,13 +47,13 @@ export function useVotes(
       if (pagination.sort_order) searchParams.set('sort_order', pagination.sort_order);
 
       const response = await fetch(`/api/votes?${searchParams.toString()}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch votes: ${response.statusText}`);
       }
 
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch votes');
       }
@@ -102,13 +102,13 @@ export function useFeaturedVotes(limit = 10) {
       setError(null);
 
       const response = await fetch(`/api/votes/featured?limit=${limit}`);
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch featured votes: ${response.statusText}`);
       }
 
       const result = await response.json();
-      
+
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch featured votes');
       }
@@ -137,12 +137,71 @@ export function useFeaturedVotes(limit = 10) {
 
 // Hook for getting active votes
 
-export function useActiveVotes(limit = 1) {
+export function useActiveVotes(limit = 1, refreshTrigger?: number) {
   const filters = useMemo<VoteFilters>(() => ({ status: "active" }), []);
   const pagination = useMemo<VotePaginationOptions>(
     () => ({ limit }),
     [limit]
   );
 
-  return useVotes(filters, pagination);
+  const result = useVotes(filters, pagination);
+
+  // Refetch when refreshTrigger changes
+  useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      result.refetch();
+    }
+  }, [refreshTrigger, result.refetch, result]);
+
+  return result;
+}
+
+// Hook for getting a specific vote by ID
+export function useVoteById(voteId: string | null) {
+  const [vote, setVote] = useState<Vote | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchVote = useCallback(async () => {
+    if (!voteId) {
+      setVote(null);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`/api/votes/${voteId}`);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch vote: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch vote');
+      }
+
+      setVote(result.data);
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      setVote(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [voteId]);
+
+  useEffect(() => {
+    fetchVote();
+  }, [fetchVote]);
+
+  return {
+    vote,
+    loading,
+    error,
+    refetch: fetchVote,
+  };
 }

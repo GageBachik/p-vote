@@ -20,10 +20,24 @@ import { ToastContainer, useToasts } from "./components/cyberpunk/Toast";
 function DegenVoteApp() {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const [selectedVoteId, setSelectedVoteId] = useState<string | null>(null);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { toasts, addToast, removeToast } = useToasts();
 
   // Initialize cyberpunk effects
   useCyberpunkEffects();
+
+  const handleVoteCreated = (voteId: string) => {
+    addToast({
+      type: "success",
+      title: "VOTE_CREATED_SUCCESSFULLY",
+      message: `Vote ID: ${voteId.slice(-8)}`,
+    });
+    // Trigger refresh of votes
+    setRefreshTrigger(prev => prev + 1);
+    // Clear selected vote to show the new one
+    setSelectedVoteId(null);
+  };
 
   return (
     <div className="min-h-screen">
@@ -31,18 +45,17 @@ function DegenVoteApp() {
 
       {selectedWalletAccount ? (
         <>
-          <DegenHeader
-            onVoteCreated={(voteId) => {
-              addToast({
-                type: "success",
-                title: "VOTE_CREATED_SUCCESSFULLY",
-                message: `Vote ID: ${voteId.slice(-8)}`,
-              });
-            }}
-          />
+          <DegenHeader onVoteCreated={handleVoteCreated} />
           <main className="container mx-auto px-4">
-            <ActiveVote />
-            <VoteHistory />
+            <ActiveVote 
+              selectedVoteId={selectedVoteId} 
+              onVoteSelect={setSelectedVoteId}
+              refreshTrigger={refreshTrigger}
+            />
+            <VoteHistory 
+              onVoteSelect={setSelectedVoteId}
+              refreshTrigger={refreshTrigger}
+            />
           </main>
         </>
       ) : (

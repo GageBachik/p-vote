@@ -1,17 +1,29 @@
 "use client";
 
-import { useContext } from "react";
+import React, { useContext } from "react";
 import { Activity, Loader2 } from "lucide-react";
 import { Terminal } from "./Terminal";
 import { SelectedWalletAccountContext } from "@/app/context/SelectedWalletAccountContext";
 import { useUserVoteHistory } from "@/app/hooks/useParticipants";
 
-export function VoteHistory() {
+interface VoteHistoryProps {
+  onVoteSelect?: (voteId: string) => void;
+  refreshTrigger?: number;
+}
+
+export function VoteHistory({ onVoteSelect, refreshTrigger }: VoteHistoryProps) {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
-  const { votes, loading, error } = useUserVoteHistory(
+  const { votes, loading, error, refetch } = useUserVoteHistory(
     selectedWalletAccount?.address || "",
     20
   );
+
+  // Refetch when refreshTrigger changes
+  React.useEffect(() => {
+    if (refreshTrigger !== undefined && refreshTrigger > 0) {
+      refetch();
+    }
+  }, [refreshTrigger, refetch]);
 
   // Format timestamp for display
   const formatTimestamp = (date: Date) => {
@@ -86,11 +98,12 @@ export function VoteHistory() {
             {votes.map((vote) => (
               <div
                 key={vote.id}
-                className={`cyber-hover p-4 flex items-center justify-between bg-cyber-dark ${
+                className={`cyber-hover p-4 flex items-center justify-between bg-cyber-dark cursor-pointer ${
                   vote.vote_choice === "yes"
                     ? "neon-border-green"
                     : "neon-border-pink"
                 }`}
+                onClick={() => onVoteSelect?.(vote.vote_id)}
               >
                 <div className="flex items-center space-x-3">
                   <span className="text-2xl cyber-pulse">

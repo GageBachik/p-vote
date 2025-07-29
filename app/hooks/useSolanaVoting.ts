@@ -30,7 +30,7 @@ import {
   getAssociatedTokenAccountAddress,
   ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
 } from "gill/programs/token";
-import * as programClient from "@/../../clients/js/src/generated";
+import * as programClient from "../../clients/js/src/generated/";
 import bs58 from "bs58";
 import { send } from 'process';
 
@@ -44,12 +44,17 @@ export interface CreateVoteParams {
   endTime: Date;
   tokenMint?: string; // null for SOL
   blockhash: Blockhash;
+  initialVote?: {
+    choice: 'yes' | 'no';
+    amount: number;
+  };
 }
 
 export interface VoteTransactionResult {
   success: boolean;
   signature?: string;
   votePubkey?: string;
+  initialVoteSignature?: string;
   error?: string;
 }
 
@@ -73,9 +78,7 @@ export function useSolanaVoting() {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const { rpc, sendAndConfirmTransaction } = useContext(RpcContext);
   const { chain: currentChain } = useContext(ChainContext);
-  const transactionSendingSigner = selectedWalletAccount
-    ? useWalletAccountTransactionSendingSigner(selectedWalletAccount, currentChain)
-    : null;
+  const transactionSendingSigner = useWalletAccountTransactionSendingSigner(selectedWalletAccount!, currentChain)
 
   // Get wallet tokens (simplified for now)
   const getWalletTokens = useCallback(async () => {
@@ -143,8 +146,13 @@ export function useSolanaVoting() {
       // Calculate time to add (milliseconds to seconds)
       const now = Math.floor(Date.now() / 1000);
       const endTimeUnix = Math.floor(params.endTime.getTime() / 1000);
-      const timeToAdd = Buffer.alloc(8);
-      timeToAdd.writeBigInt64LE(BigInt(endTimeUnix - now));
+      const diff = BigInt(endTimeUnix - now);
+      // Allocate 8 bytes for 64-bit integer
+      const buffer = new ArrayBuffer(8);
+      const view = new DataView(buffer);
+      view.setBigInt64(0, diff, true); // true = little endian
+
+      const timeToAdd = new Uint8Array(buffer); // same as Buffer equivalent
 
       // Default to USDC if no token specified
       const tokenMint = params.tokenMint ? address(params.tokenMint) : address("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
@@ -169,12 +177,54 @@ export function useSolanaVoting() {
       // Get latest blockhash if not provided
       const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       console.log('Latest blockhash:', latestBlockhash);
-      // Create and send transaction with only wallet signature needed
+
+      const instructions = [initVoteIx];
+
+      // Add initial vote instruction if provided
+      if (params.initialVote) {
+        // Get position PDA
+        const [positionPda] = await getProgramDerivedAddress({
+          programAddress: PROGRAM_ID,
+          seeds: ["position", enc.encode(vote.address), enc.encode(address(selectedWalletAccount.address))]
+        });
+
+        const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(selectedWalletAccount.address));
+
+        // Convert amount to proper units (assuming 6 decimals for USDC)
+        const scaledAmount = BigInt(Math.floor(params.initialVote.amount * 1_000_000));
+        const buffer = new ArrayBuffer(8);
+        const view = new DataView(buffer);
+        view.setBigUint64(0, scaledAmount, true);
+        const positionAmount = new Uint8Array(buffer);
+
+        // Convert side to number (0 = false/no, 1 = true/yes)
+        const side = params.initialVote.choice === 'yes' ? 1 : 0;
+
+        // Create initialize position instruction
+        const initPositionIx = programClient.getIntitializePositionInstruction({
+          authority: transactionSendingSigner,
+          platform: platformPda,
+          vault: vaultPda,
+          vote: vote.address,
+          token: tokenMint,
+          voteVault: voteVaultPda,
+          voteVaultTokenAccount,
+          authorityTokenAccount,
+          vaultTokenAccount,
+          position: positionPda,
+          amount: positionAmount,
+          side,
+        });
+
+        instructions.push(initPositionIx as any);
+      }
+
+      // Create and send transaction with combined instructions
       const message = pipe(
         createTransactionMessage({ version: "legacy" }),
         m => setTransactionMessageFeePayerSigner(transactionSendingSigner, m),
         m => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
-        m => appendTransactionMessageInstructions([initVoteIx], m)
+        m => appendTransactionMessageInstructions(instructions, m)
       );
 
       try {
@@ -184,12 +234,12 @@ export function useSolanaVoting() {
         // );      assertIsTransactionMessageWithSingleSendingSigner(message);
         const signature = await signAndSendTransactionMessageWithSigners(message);
 
-        // For now, we'll return the vote address and let the UI handle the actual transaction sending
-        // since we need to handle the vote keypair signing separately
+        // Return result with both signatures if initial vote was included
         return {
           success: true,
-          signature: getBase58Decoder().decode(signature), // Placeholder signature
-          votePubkey: vote.address
+          signature: getBase58Decoder().decode(signature),
+          votePubkey: vote.address,
+          initialVoteSignature: params.initialVote ? getBase58Decoder().decode(signature) : undefined
         };
 
 
@@ -255,8 +305,13 @@ export function useSolanaVoting() {
       const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(selectedWalletAccount.address));
 
       // Convert amount to proper units (assuming 6 decimals for USDC)
-      const positionAmount = Buffer.alloc(8);
-      positionAmount.writeBigUInt64LE(BigInt(Math.floor(params.amount * 1_000_000)));
+      const scaledAmount = BigInt(Math.floor(params.amount * 1_000_000));
+
+      const buffer = new ArrayBuffer(8);
+      const view = new DataView(buffer);
+      view.setBigUint64(0, scaledAmount, true); // true = little endian
+
+      const positionAmount = new Uint8Array(buffer);
 
       // Convert side to number (0 = false/no, 1 = true/yes)
       const side = params.side === 'yes' ? 1 : 0;
@@ -362,9 +417,13 @@ export function useSolanaVoting() {
       const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(selectedWalletAccount.address));
 
       // Convert amount to proper units (assuming 6 decimals for USDC)
-      const updateAmount = Buffer.alloc(8);
-      updateAmount.writeBigUInt64LE(BigInt(Math.floor(params.amount * 1_000_000)));
+      const scaledAmount = BigInt(Math.floor(params.amount * 1_000_000));
 
+      const buffer = new ArrayBuffer(8);
+      const view = new DataView(buffer);
+      view.setBigUint64(0, scaledAmount, true); // true = little endian
+
+      const updateAmount = new Uint8Array(buffer);
       // Create update position instruction
       const updatePositionIx = programClient.getUpdatePositionInstruction({
         authority: transactionSendingSigner,
@@ -409,7 +468,7 @@ export function useSolanaVoting() {
   const getVoteState = useCallback(async (votePubkey: string) => {
     try {
       // Fetch the vote account data
-      const voteAccount = await programClient.fetchVote(rpc as any, address(votePubkey));
+      const voteAccount = await programClient.fetchVote(rpc, address(votePubkey));
 
       if (!voteAccount?.data) {
         throw new Error('Vote account not found');

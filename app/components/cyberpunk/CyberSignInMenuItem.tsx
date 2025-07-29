@@ -20,7 +20,7 @@ export function CyberSignInMenuItem({
       try {
         // Ensure the wallet is ready and has accounts
         if (!wallet.accounts.length) {
-          // @ts-expect-error
+          // @ts-expect-error Some wallets may not have a connect method
           await wallet.connect?.(); // Some wallets may require this
         }
         const account = wallet.accounts[0]; // Or let the user choose one

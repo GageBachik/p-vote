@@ -80,6 +80,7 @@ export function CreateVoteModal({
     selectedToken: "USDC",
     tags: [],
   });
+  const [initialVoteAmount, setInitialVoteAmount] = useState<string>("");
 
   // Fetch user's tokens from wallet
   const fetchWalletTokens = async () => {
@@ -154,6 +155,10 @@ export function CreateVoteModal({
         tokenMint:
           formData.selectedToken === "SOL" ? undefined : formData.selectedToken,
         blockhash: latestBlockhash.blockhash,
+        initialVote: formData.initialVote ? {
+          choice: formData.initialVote,
+          amount: parseFloat(initialVoteAmount) || 1
+        } : undefined,
       });
 
       if (!txResult.success) {
@@ -195,28 +200,24 @@ export function CreateVoteModal({
         throw new Error(result.error || "Failed to store vote in database");
       }
 
-      // Step 3: Cast initial vote if selected
-      if (formData.initialVote && result.data.id) {
-        const voteResult = await castVote(
-          txResult.votePubkey!,
-          formData.initialVote
-        );
-
-        if (voteResult.success) {
-          // Store the vote in database
-          await fetch(`/api/votes/${result.data.id}/participants`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              voter_pubkey: walletAddress,
-              vote_choice: formData.initialVote,
-              vote_power: 1,
-              vote_tx_signature: voteResult.signature,
-            }),
-          });
-        }
+      // Step 3: Cast initial vote if selected (already included in combined transaction)
+      if (formData.initialVote && result.data.id && txResult.initialVoteSignature) {
+        // Parse the amount, default to 1 if not provided
+        const amount = parseFloat(initialVoteAmount) || 1;
+        
+        // Store the initial vote in database (transaction already executed)
+        await fetch(`/api/votes/${result.data.id}/participants`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            voter_pubkey: walletAddress,
+            vote_choice: formData.initialVote,
+            vote_power: amount,
+            vote_tx_signature: txResult.initialVoteSignature,
+          }),
+        });
       }
 
       // Success!
@@ -636,6 +637,28 @@ export function CreateVoteModal({
                     </button>
                   </div>
                 </div>
+                
+                {/* Token amount input - shows when vote choice is selected */}
+                {formData.initialVote && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-bold cyber-cyan mb-2">
+                      <Coins className="w-4 h-4 inline mr-1" />
+                      VOTE_AMOUNT_TOKENS
+                    </label>
+                    <input
+                      type="number"
+                      value={initialVoteAmount}
+                      onChange={(e) => setInitialVoteAmount(e.target.value)}
+                      placeholder="Amount to vote with (default: 1)"
+                      className="w-full p-2 bg-cyber-dark border border-cyber-cyan cyber-cyan cyber-font text-sm"
+                      min="0"
+                      step="0.01"
+                    />
+                    <div className="text-xs cyber-yellow mt-1">
+                      Enter the amount of {formData.selectedToken === "SOL" ? "SOL" : availableTokens.find(t => t.mint === formData.selectedToken)?.symbol || "tokens"} to vote with
+                    </div>
+                  </div>
+                )}
               </div>
             </Terminal>
           </div>

@@ -3,25 +3,28 @@
 import { ReactNode } from "react";
 
 interface TerminalProps {
-  header: string;
+  header: any;
   className?: string;
   children: ReactNode;
   glowColor?: "green" | "pink" | "cyan" | "yellow";
 }
 
-export function Terminal({ header, className = "", children, glowColor = "green" }: TerminalProps) {
+export function Terminal({
+  header,
+  className = "",
+  children,
+  glowColor = "green",
+}: TerminalProps) {
   const glowClass = {
     green: "neon-glow-green",
-    pink: "neon-glow-pink", 
+    pink: "neon-glow-pink",
     cyan: "neon-glow-cyan",
-    yellow: "neon-glow-yellow"
+    yellow: "neon-glow-yellow",
   }[glowColor];
 
   return (
     <div className={`terminal-window ${glowClass} ${className}`}>
-      <div className="terminal-header">
-        {header}
-      </div>
+      <div className="terminal-header">{header}</div>
       {children}
     </div>
   );
