@@ -86,27 +86,27 @@ export function useSolanaVoting() {
     // TODO: Implement actual RPC calls to fetch user's token accounts
     // For now, return mock data
     return [
-      {
-        mint: 'So11111111111111111111111111111111111111112',
-        symbol: 'SOL',
-        balance: 2.5,
-        decimals: 9,
-        name: 'Solana'
-      },
+      // {
+      //   mint: 'So11111111111111111111111111111111111111112',
+      //   symbol: 'SOL',
+      //   balance: 2.5,
+      //   decimals: 9,
+      //   name: 'Solana'
+      // },
       {
         mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
         symbol: 'USDC',
-        balance: 150.0,
+        balance: 0,
         decimals: 6,
         name: 'USD Coin'
       },
-      {
-        mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
-        symbol: 'USDT',
-        balance: 75.25,
-        decimals: 6,
-        name: 'Tether USD'
-      }
+      // {
+      //   mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
+      //   symbol: 'USDT',
+      //   balance: 75.25,
+      //   decimals: 6,
+      //   name: 'Tether USD'
+      // }
     ];
   }, [selectedWalletAccount]);
 

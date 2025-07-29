@@ -77,7 +77,7 @@ export function CreateVoteModal({
     duration: "1d",
     customDuration: 1,
     customUnit: "hours",
-    selectedToken: "SOL",
+    selectedToken: "USDC",
     tags: [],
   });
 
@@ -492,7 +492,7 @@ export function CreateVoteModal({
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <button
+                      {/* <button
                         onClick={() =>
                           setFormData((prev) => ({
                             ...prev,
@@ -509,7 +509,7 @@ export function CreateVoteModal({
                           <span className="font-bold">SOL</span>
                           <span>Native Solana</span>
                         </div>
-                      </button>
+                      </button> */}
                       {availableTokens.map((token) => (
                         <button
                           key={token.mint}
