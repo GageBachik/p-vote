@@ -12,7 +12,7 @@ export function ChainContextProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [chain, setChain] = useState("solana:localnet");
+  const [chain, setChain] = useState("solana:mainnet");
 
   // Load chain from localStorage after component mounts
   useEffect(() => {
@@ -31,9 +31,11 @@ export function ChainContextProvider({
           displayName: "Mainnet Beta",
           solanaExplorerClusterName: "mainnet-beta",
           solanaRpcSubscriptionsUrl: mainnet(
-            "wss://api.mainnet-beta.solana.com"
+            "wss:///mainnet.helius-rpc.com/?api-key=1e722833-0c3e-47ac-9974-13de5c01d1ee"
           ),
-          solanaRpcUrl: mainnet("https://api.mainnet-beta.solana.com"),
+          solanaRpcUrl: mainnet(
+            "https:///mainnet.helius-rpc.com/?api-key=1e722833-0c3e-47ac-9974-13de5c01d1ee"
+          ),
         };
 
       // falls through

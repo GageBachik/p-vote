@@ -24,8 +24,10 @@ export const DEFAULT_CHAIN_CONFIG = Object.freeze({
   chain: "solana:mainnet",
   displayName: "Mainnet",
   solanaExplorerClusterName: "mainnet-beta",
-  solanaRpcSubscriptionsUrl: "wss://api.mainnet-beta.solana.com",
-  solanaRpcUrl: "https://api.mainnet-beta.solana.com",
+  solanaRpcSubscriptionsUrl:
+    "wss:///mainnet.helius-rpc.com/?api-key=1e722833-0c3e-47ac-9974-13de5c01d1ee",
+  solanaRpcUrl:
+    "https:///mainnet.helius-rpc.com/?api-key=1e722833-0c3e-47ac-9974-13de5c01d1ee",
 });
 
 export const ChainContext = createContext<ChainContext>(DEFAULT_CHAIN_CONFIG);

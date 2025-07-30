@@ -13,7 +13,8 @@ import {
 
 const { rpc, rpcSubscriptions, sendAndConfirmTransaction } = createSolanaClient(
   {
-    urlOrMoniker: "mainnet", // or full RPC URL
+    urlOrMoniker:
+      "https:///mainnet.helius-rpc.com/?api-key=1e722833-0c3e-47ac-9974-13de5c01d1ee", // or full RPC URL
   }
 );
 

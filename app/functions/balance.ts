@@ -56,7 +56,7 @@ export function balanceSubscribe(
             // one.
             continue;
           }
-          console.log("Received update for", address, ":", data);
+          // console.log("Received update for", address, ":", data);
           // Parse token account layout from raw data
           const account = await fetchToken(rpc as any, address);
 
