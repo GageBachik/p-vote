@@ -527,7 +527,7 @@
         },
         {
           "name": "vault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "docs": [
             "platforms fee vault pda"
@@ -551,7 +551,7 @@
         },
         {
           "name": "voteVault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false,
           "docs": [
             "votes vault pda"
@@ -603,6 +603,14 @@
           "isSigner": false,
           "docs": [
             "System program"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "Token program"
           ]
         }
       ],

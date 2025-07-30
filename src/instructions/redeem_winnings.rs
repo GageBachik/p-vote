@@ -8,6 +8,7 @@ use pinocchio::{
 };
 
 use pinocchio::sysvars::clock::Clock;
+use pinocchio_log::log;
 use pinocchio_pubkey::derive_address;
 use pinocchio_token::instructions::Transfer;
 
@@ -29,13 +30,16 @@ pub struct RedeemWinningsAccounts<'info> {
     pub authority_token_account: &'info AccountInfo,
     pub vault_token_account: &'info AccountInfo,
     pub position: &'info AccountInfo,
+    pub rent: &'info AccountInfo,
+    pub system_program: &'info AccountInfo,
+    pub token_program: &'info AccountInfo,
 }
 
 impl<'info> TryFrom<&'info [AccountInfo]> for RedeemWinningsAccounts<'info> {
     type Error = ProgramError;
 
     fn try_from(accounts: &'info [AccountInfo]) -> Result<Self, Self::Error> {
-        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position, ..] =
+        let [authority, platform, vault, vote, token, vote_vault, vote_vault_token_account, authority_token_account, vault_token_account, position, rent, system_program, token_program, ..] =
             accounts
         else {
             return Err(ProgramError::NotEnoughAccountKeys);
@@ -82,15 +86,15 @@ impl<'info> TryFrom<&'info [AccountInfo]> for RedeemWinningsAccounts<'info> {
             return Err(ProgramError::InvalidAccountData);
         }
 
-        if vote_vault_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !vote_vault_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if authority_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !authority_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
-        if vault_token_account.is_owned_by(&pinocchio_token::ID) {
+        if !vault_token_account.is_owned_by(&pinocchio_token::ID) {
             return Err(ProgramError::InvalidAccountOwner);
         }
 
@@ -105,6 +109,9 @@ impl<'info> TryFrom<&'info [AccountInfo]> for RedeemWinningsAccounts<'info> {
             authority_token_account,
             vault_token_account,
             position,
+            rent,
+            system_program,
+            token_program,
         })
     }
 }
@@ -252,13 +259,15 @@ impl<'info> RedeemWinnings<'info> {
         ];
         let signer_seeds = Signer::from(&seeds);
 
+        log!("Redeeming winnings for {} tokens", reward);
+        log!("Taking {} tokens as fee", fee_amount);
         Transfer {
             from: self.accounts.vote_vault_token_account,
             to: self.accounts.authority_token_account,
             authority: self.accounts.vote_vault,
-            amount: reward,
+            amount: reward - fee_amount,
         }
-        .invoke_signed(&[signer_seeds])?;
+        .invoke_signed(&[signer_seeds.clone()])?;
         // Take our fee
         Transfer {
             from: self.accounts.vote_vault_token_account,
@@ -266,7 +275,7 @@ impl<'info> RedeemWinnings<'info> {
             authority: self.accounts.vote_vault,
             amount: fee_amount,
         }
-        .invoke()?;
+        .invoke_signed(&[signer_seeds])?;
 
         // lastly close the position account data so it can no longer be redeemed.
         {

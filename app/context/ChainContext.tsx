@@ -12,12 +12,20 @@ export type ChainContext = Readonly<{
   solanaRpcUrl: ClusterUrl;
 }>;
 
+// export const DEFAULT_CHAIN_CONFIG = Object.freeze({
+//   chain: "solana:localnet",
+//   displayName: "Localnet",
+//   solanaExplorerClusterName: "localnet",
+//   solanaRpcSubscriptionsUrl: "wss://127.0.0.1:8899",
+//   solanaRpcUrl: "http://127.0.0.1:8899",
+// });
+
 export const DEFAULT_CHAIN_CONFIG = Object.freeze({
-  chain: "solana:localnet",
-  displayName: "Localnet",
-  solanaExplorerClusterName: "localnet",
-  solanaRpcSubscriptionsUrl: "wss://127.0.0.1:8899",
-  solanaRpcUrl: "http://127.0.0.1:8899",
+  chain: "solana:mainnet",
+  displayName: "Mainnet",
+  solanaExplorerClusterName: "mainnet-beta",
+  solanaRpcSubscriptionsUrl: "wss://api.mainnet-beta.solana.com",
+  solanaRpcUrl: "https://api.mainnet-beta.solana.com",
 });
 
 export const ChainContext = createContext<ChainContext>(DEFAULT_CHAIN_CONFIG);

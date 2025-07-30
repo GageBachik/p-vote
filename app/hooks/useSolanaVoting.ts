@@ -31,8 +31,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
 } from "gill/programs/token";
 import * as programClient from "../../clients/js/src/generated/";
-import bs58 from "bs58";
-import { send } from 'process';
+import bs58 from 'bs58';
 
 // Program ID for the voting program
 const PROGRAM_ID = address('pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu');
@@ -43,7 +42,6 @@ export interface CreateVoteParams {
   description?: string;
   endTime: Date;
   tokenMint?: string; // null for SOL
-  blockhash: Blockhash;
   initialVote?: {
     choice: 'yes' | 'no';
     amount: number;
@@ -63,14 +61,17 @@ export interface InitializePositionParams {
   amount: number;
   side: 'yes' | 'no';
   tokenMint?: string;
-  blockhash: Blockhash;
 }
 
 export interface UpdatePositionParams {
   votePubkey: string;
   amount: number;
   tokenMint?: string;
-  blockhash: Blockhash;
+}
+
+export interface RedeemWinningsParams {
+  votePubkey: string;
+  tokenMint?: string;
 }
 
 // Hook for Solana voting operations
@@ -174,10 +175,6 @@ export function useSolanaVoting() {
         timeToAdd
       });
 
-      // Get latest blockhash if not provided
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-      console.log('Latest blockhash:', latestBlockhash);
-
       const instructions = [initVoteIx];
 
       // Add initial vote instruction if provided
@@ -219,6 +216,7 @@ export function useSolanaVoting() {
         instructions.push(initPositionIx as any);
       }
 
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       // Create and send transaction with combined instructions
       const message = pipe(
         createTransactionMessage({ version: "legacy" }),
@@ -271,8 +269,6 @@ export function useSolanaVoting() {
 
     try {
       const enc = getAddressEncoder();
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
-
       // Get platform and vault PDAs
       const [platformPda] = await getProgramDerivedAddress({
         programAddress: PROGRAM_ID,
@@ -332,9 +328,10 @@ export function useSolanaVoting() {
         side,
       });
 
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       // Create transaction message for wallet signing
       const message = pipe(
-        createTransactionMessage({ version: 0 }),
+        createTransactionMessage({ version: 'legacy' }),
         m => setTransactionMessageFeePayerSigner(transactionSendingSigner, m),
         m => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
         m => appendTransactionMessageInstructions([initPositionIx], m)
@@ -363,12 +360,10 @@ export function useSolanaVoting() {
     choice: 'yes' | 'no',
     amount?: number
   ): Promise<VoteTransactionResult> => {
-    const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
     return initializePosition({
       votePubkey,
       amount: amount || 1, // Default to 1 token if not specified
       side: choice,
-      blockhash: latestBlockhash.blockhash
     });
   }, [initializePosition, rpc]);
 
@@ -383,7 +378,6 @@ export function useSolanaVoting() {
 
     try {
       const enc = getAddressEncoder();
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
       // Get platform and vault PDAs
       const [platformPda] = await getProgramDerivedAddress({
@@ -439,9 +433,10 @@ export function useSolanaVoting() {
         amount: updateAmount,
       });
 
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       // Create transaction message for wallet signing
       const message = pipe(
-        createTransactionMessage({ version: 0 }),
+        createTransactionMessage({ version: 'legacy' }),
         m => setTransactionMessageFeePayerSigner(transactionSendingSigner, m),
         m => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
         m => appendTransactionMessageInstructions([updatePositionIx], m)
@@ -460,6 +455,89 @@ export function useSolanaVoting() {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown update error'
+      };
+    }
+  }, [selectedWalletAccount, rpc, transactionSendingSigner]);
+
+  // Redeem winnings from a completed vote
+  const redeemWinnings = useCallback(async (params: RedeemWinningsParams): Promise<VoteTransactionResult> => {
+    if (!selectedWalletAccount?.address || !transactionSendingSigner) {
+      return {
+        success: false,
+        error: 'Wallet not connected or not ready'
+      };
+    }
+
+    try {
+      const enc = getAddressEncoder();
+      // Get platform and vault PDAs
+      const [platformPda] = await getProgramDerivedAddress({
+        programAddress: PROGRAM_ID,
+        seeds: ["config"]
+      });
+
+      const [vaultPda] = await getProgramDerivedAddress({
+        programAddress: PROGRAM_ID,
+        seeds: [enc.encode(platformPda)]
+      });
+
+      // Get vote vault PDA
+      const voteAddress = address(params.votePubkey);
+      const [voteVaultPda] = await getProgramDerivedAddress({
+        programAddress: PROGRAM_ID,
+        seeds: [enc.encode(voteAddress)]
+      });
+
+      // Get position PDA
+      const [positionPda] = await getProgramDerivedAddress({
+        programAddress: PROGRAM_ID,
+        seeds: ["position", enc.encode(voteAddress), enc.encode(address(selectedWalletAccount.address))]
+      });
+
+      // Default to USDC if no token specified
+      const tokenMint = params.tokenMint ? address(params.tokenMint) : address("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+
+      const voteVaultTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, voteVaultPda);
+      const vaultTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, vaultPda);
+      const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(selectedWalletAccount.address));
+
+      console.log('Redeeming winnings from account', voteVaultTokenAccount);
+      // Create redeem winnings instruction
+      const redeemWinningsIx = programClient.getRedeemWinningsInstruction({
+        authority: transactionSendingSigner,
+        platform: platformPda,
+        vault: vaultPda,
+        vote: voteAddress,
+        token: tokenMint,
+        voteVault: voteVaultPda,
+        voteVaultTokenAccount,
+        authorityTokenAccount,
+        vaultTokenAccount,
+        position: positionPda,
+      });
+
+      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
+      // Create transaction message for wallet signing
+      const message = pipe(
+        createTransactionMessage({ version: 'legacy' }),
+        m => setTransactionMessageFeePayerSigner(transactionSendingSigner, m),
+        m => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, m),
+        m => appendTransactionMessageInstructions([redeemWinningsIx], m)
+      );
+
+      assertIsTransactionMessageWithSingleSendingSigner(message);
+      const signature = await signAndSendTransactionMessageWithSigners(message);
+
+      return {
+        success: true,
+        signature: getBase58Decoder().decode(signature)
+      };
+
+    } catch (error) {
+      console.error('Redeem winnings error:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown redeem error'
       };
     }
   }, [selectedWalletAccount, rpc, transactionSendingSigner]);
@@ -520,7 +598,8 @@ export function useSolanaVoting() {
     castVote,
     getVoteState,
     initializePosition,
-    updatePosition
+    updatePosition,
+    redeemWinnings
   };
 }
 

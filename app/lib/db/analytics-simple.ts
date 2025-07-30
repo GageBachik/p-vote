@@ -22,6 +22,8 @@ export async function getPlatformAnalyticsSimple(): Promise<{
       FROM vote_participants
     `;
 
+    // console.log("participantResult", participantResult);
+
     // Get view counts from votes table
     const viewResult = await sql`
       SELECT COALESCE(SUM(view_count), 0) as total_views

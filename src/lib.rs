@@ -199,10 +199,10 @@ pub enum PTokenInstructions {
         desc = "Authority of the vault"
     )]
     #[account(1, name = "platform", desc = "Platform pda key")]
-    #[account(2, name = "vault", desc = "platforms fee vault pda")]
+    #[account(2, writable, name = "vault", desc = "platforms fee vault pda")]
     #[account(3, writable, name = "vote", desc = "vote account")]
     #[account(4, name = "token", desc = "vote token")]
-    #[account(5, name = "vote_vault", desc = "votes vault pda")]
+    #[account(5, writable, name = "vote_vault", desc = "votes vault pda")]
     #[account(
         6,
         writable,
@@ -229,5 +229,6 @@ pub enum PTokenInstructions {
     )]
     #[account(10, name = "rent", desc = "Rent program")]
     #[account(11, name = "system_program", desc = "System program")]
+    #[account(12, name = "token_program", desc = "Token program")]
     RedeemWinnings,
 }

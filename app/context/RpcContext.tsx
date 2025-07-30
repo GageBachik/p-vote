@@ -13,7 +13,7 @@ import {
 
 const { rpc, rpcSubscriptions, sendAndConfirmTransaction } = createSolanaClient(
   {
-    urlOrMoniker: "http://127.0.0.1:8899", // or full RPC URL
+    urlOrMoniker: "mainnet", // or full RPC URL
   }
 );
 

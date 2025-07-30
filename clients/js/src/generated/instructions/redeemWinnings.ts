@@ -55,6 +55,9 @@ export type RedeemWinningsInstruction<
   TAccountSystemProgram extends
     | string
     | AccountMeta<string> = '11111111111111111111111111111111',
+  TAccountTokenProgram extends
+    | string
+    | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -68,7 +71,7 @@ export type RedeemWinningsInstruction<
         ? ReadonlyAccount<TAccountPlatform>
         : TAccountPlatform,
       TAccountVault extends string
-        ? ReadonlyAccount<TAccountVault>
+        ? WritableAccount<TAccountVault>
         : TAccountVault,
       TAccountVote extends string
         ? WritableAccount<TAccountVote>
@@ -77,7 +80,7 @@ export type RedeemWinningsInstruction<
         ? ReadonlyAccount<TAccountToken>
         : TAccountToken,
       TAccountVoteVault extends string
-        ? ReadonlyAccount<TAccountVoteVault>
+        ? WritableAccount<TAccountVoteVault>
         : TAccountVoteVault,
       TAccountVoteVaultTokenAccount extends string
         ? WritableAccount<TAccountVoteVaultTokenAccount>
@@ -97,6 +100,9 @@ export type RedeemWinningsInstruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
+      TAccountTokenProgram extends string
+        ? ReadonlyAccount<TAccountTokenProgram>
+        : TAccountTokenProgram,
       ...TRemainingAccounts,
     ]
   >;
@@ -139,6 +145,7 @@ export type RedeemWinningsInput<
   TAccountPosition extends string = string,
   TAccountRent extends string = string,
   TAccountSystemProgram extends string = string,
+  TAccountTokenProgram extends string = string,
 > = {
   /** Authority of the vault */
   authority: TransactionSigner<TAccountAuthority>;
@@ -164,6 +171,8 @@ export type RedeemWinningsInput<
   rent?: Address<TAccountRent>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
+  /** Token program */
+  tokenProgram?: Address<TAccountTokenProgram>;
 };
 
 export function getRedeemWinningsInstruction<
@@ -179,6 +188,7 @@ export function getRedeemWinningsInstruction<
   TAccountPosition extends string,
   TAccountRent extends string,
   TAccountSystemProgram extends string,
+  TAccountTokenProgram extends string,
   TProgramAddress extends Address = typeof P_VOTE_PROGRAM_ADDRESS,
 >(
   input: RedeemWinningsInput<
@@ -193,7 +203,8 @@ export function getRedeemWinningsInstruction<
     TAccountVaultTokenAccount,
     TAccountPosition,
     TAccountRent,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
 ): RedeemWinningsInstruction<
@@ -209,7 +220,8 @@ export function getRedeemWinningsInstruction<
   TAccountVaultTokenAccount,
   TAccountPosition,
   TAccountRent,
-  TAccountSystemProgram
+  TAccountSystemProgram,
+  TAccountTokenProgram
 > {
   // Program address.
   const programAddress = config?.programAddress ?? P_VOTE_PROGRAM_ADDRESS;
@@ -218,10 +230,10 @@ export function getRedeemWinningsInstruction<
   const originalAccounts = {
     authority: { value: input.authority ?? null, isWritable: true },
     platform: { value: input.platform ?? null, isWritable: false },
-    vault: { value: input.vault ?? null, isWritable: false },
+    vault: { value: input.vault ?? null, isWritable: true },
     vote: { value: input.vote ?? null, isWritable: true },
     token: { value: input.token ?? null, isWritable: false },
-    voteVault: { value: input.voteVault ?? null, isWritable: false },
+    voteVault: { value: input.voteVault ?? null, isWritable: true },
     voteVaultTokenAccount: {
       value: input.voteVaultTokenAccount ?? null,
       isWritable: true,
@@ -237,6 +249,7 @@ export function getRedeemWinningsInstruction<
     position: { value: input.position ?? null, isWritable: true },
     rent: { value: input.rent ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -251,6 +264,10 @@ export function getRedeemWinningsInstruction<
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.tokenProgram.value) {
+    accounts.tokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
@@ -268,6 +285,7 @@ export function getRedeemWinningsInstruction<
       getAccountMeta(accounts.position),
       getAccountMeta(accounts.rent),
       getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
     data: getRedeemWinningsInstructionDataEncoder().encode({}),
@@ -284,7 +302,8 @@ export function getRedeemWinningsInstruction<
     TAccountVaultTokenAccount,
     TAccountPosition,
     TAccountRent,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountTokenProgram
   >;
 
   return instruction;
@@ -320,6 +339,8 @@ export type ParsedRedeemWinningsInstruction<
     rent: TAccountMetas[10];
     /** System program */
     systemProgram: TAccountMetas[11];
+    /** Token program */
+    tokenProgram: TAccountMetas[12];
   };
   data: RedeemWinningsInstructionData;
 };
@@ -332,7 +353,7 @@ export function parseRedeemWinningsInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedRedeemWinningsInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 12) {
+  if (instruction.accounts.length < 13) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -357,6 +378,7 @@ export function parseRedeemWinningsInstruction<
       position: getNextAccount(),
       rent: getNextAccount(),
       systemProgram: getNextAccount(),
+      tokenProgram: getNextAccount(),
     },
     data: getRedeemWinningsInstructionDataDecoder().decode(instruction.data),
   };

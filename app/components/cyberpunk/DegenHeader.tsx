@@ -46,8 +46,10 @@ export function DegenHeader({ onVoteCreated }: DegenHeaderProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <h1 className="text-3xl font-bold cyber-font cyber-pulse">
-                <GlitchText text="DEGENVOTE" className="cyber-green" />
-                <span className="cyber-cyan ml-2">⚡</span>
+                <a href="http://degenvote.com/" className="cyber-green">
+                  <GlitchText text="DEGENVOTE" className="cyber-green" />
+                  <span className="cyber-cyan ml-2">⚡</span>
+                </a>
               </h1>
             </div>
 

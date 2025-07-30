@@ -14,6 +14,11 @@
             "date": 1753745029894,
             "name": "/Users/loser/projects/p-vote/logs/mcp-puppeteer-2025-07-28.log",
             "hash": "121def23c2b3cb243cbcb1567ecf7e4302417101e1120dfc504db9a595d14f65"
+        },
+        {
+            "date": 1753831526073,
+            "name": "/Users/loser/projects/p-vote/logs/mcp-puppeteer-2025-07-29.log",
+            "hash": "364f019e0bfbd413207ab1014a3f300d9bb8ed1e8b6b643a4b35d30e413f5b47"
         }
     ],
     "hashType": "sha256"

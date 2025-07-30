@@ -26,17 +26,16 @@ export function ChainContextProvider({
   const contextValue = useMemo<ChainContext>(() => {
     switch (chain) {
       case "solana:mainnet":
-        if (process.env.REACT_EXAMPLE_APP_ENABLE_MAINNET === "true") {
-          return {
-            chain: "solana:mainnet",
-            displayName: "Mainnet Beta",
-            solanaExplorerClusterName: "mainnet-beta",
-            solanaRpcSubscriptionsUrl: mainnet(
-              "wss://api.mainnet-beta.solana.com"
-            ),
-            solanaRpcUrl: mainnet("https://api.mainnet-beta.solana.com"),
-          };
-        }
+        return {
+          chain: "solana:mainnet",
+          displayName: "Mainnet Beta",
+          solanaExplorerClusterName: "mainnet-beta",
+          solanaRpcSubscriptionsUrl: mainnet(
+            "wss://api.mainnet-beta.solana.com"
+          ),
+          solanaRpcUrl: mainnet("https://api.mainnet-beta.solana.com"),
+        };
+
       // falls through
       case "solana:testnet":
         return {

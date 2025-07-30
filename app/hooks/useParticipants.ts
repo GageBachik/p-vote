@@ -233,12 +233,14 @@ export async function submitVote(
 // Hook for checking if user has voted
 export function useHasUserVoted(voteId: string, voterPubkey: string) {
   const [hasVoted, setHasVoted] = useState(false);
+  const [voteChoice, setVoteChoice] = useState<'yes' | 'no' | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const checkVoteStatus = useCallback(async () => {
     if (!voteId || !voterPubkey) {
       setHasVoted(false);
+      setVoteChoice(null);
       setLoading(false);
       return;
     }
@@ -251,6 +253,7 @@ export function useHasUserVoted(voteId: string, voterPubkey: string) {
       
       if (response.status === 404) {
         setHasVoted(false);
+        setVoteChoice(null);
         return;
       }
 
@@ -259,11 +262,14 @@ export function useHasUserVoted(voteId: string, voterPubkey: string) {
       }
 
       const result = await response.json();
-      setHasVoted(result.success && result.data && result.data.vote_choice !== null);
+      const hasParticipated = result.success && result.data && result.data.vote_choice !== null;
+      setHasVoted(hasParticipated);
+      setVoteChoice(hasParticipated ? result.data.vote_choice : null);
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
       setHasVoted(false);
+      setVoteChoice(null);
     } finally {
       setLoading(false);
     }
@@ -275,6 +281,7 @@ export function useHasUserVoted(voteId: string, voterPubkey: string) {
 
   return {
     hasVoted,
+    voteChoice,
     loading,
     error,
     refetch: checkVoteStatus,

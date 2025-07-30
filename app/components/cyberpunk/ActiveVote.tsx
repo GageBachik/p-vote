@@ -47,6 +47,7 @@ export function ActiveVote({
     yesVotes: number;
     noVotes: number;
   } | null>(null);
+  const [redeeming, setRedeeming] = useState<boolean>(false);
 
   // Fetch active vote data (get 6 latest)
   const {
@@ -81,19 +82,23 @@ export function ActiveVote({
 
   // Check if user has voted (use mock address if no wallet)
   const mockWalletAddress = "E7pD4b6a3TKtP9w2xN1vR8sL5mJ3qY4nK6tF9cH8dA2";
-  const { hasVoted, refetch: refetchVotedStatus } = useHasUserVoted(
+  const {
+    hasVoted,
+    voteChoice,
+    refetch: refetchVotedStatus,
+  } = useHasUserVoted(
     activeVote?.id || "",
     selectedWalletAccount?.address || mockWalletAddress
   );
 
   // Get real-time stats
   const { stats } = useRealTimeStats(30000); // Update every 30 seconds
-
   // Solana voting functions
   const {
     castVote: castVoteOnChain,
     updatePosition,
     getVoteState,
+    redeemWinnings,
   } = useSolanaVoting();
 
   // Track view when component loads and vote changes
@@ -158,6 +163,11 @@ export function ActiveVote({
   const totalAmount = yesAmount + noAmount;
   const yesPercentage = totalAmount > 0 ? (yesAmount / totalAmount) * 100 : 0;
   const noPercentage = totalAmount > 0 ? (noAmount / totalAmount) * 100 : 0;
+
+  // Check if vote is over and determine winner
+  const voteIsOver = timeLeft === 0;
+  const winningSide = yesAmount > noAmount ? "yes" : "no";
+  const userWon = hasVoted && voteChoice === winningSide;
 
   const triggerShake = (voteType: "yes" | "no") => {
     setShakeButton(voteType);
@@ -241,6 +251,35 @@ export function ActiveVote({
     }
   };
 
+  const handleRedeemWinnings = async () => {
+    if (!selectedWalletAccount?.address || !activeVote?.vote_pubkey) return;
+
+    setRedeeming(true);
+    try {
+      const result = await redeemWinnings({
+        votePubkey: activeVote.vote_pubkey,
+      });
+
+      if (result.success) {
+        setVoteMessage(">>> WINNINGS_REDEEMED_SUCCESSFULLY");
+        setFlashHologram(true);
+      } else {
+        setVoteMessage(`>>> REDEMPTION_FAILED: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Redeem winnings failed:", error);
+      setVoteMessage(
+        `>>> REDEMPTION_ERROR: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setRedeeming(false);
+      setTimeout(() => {
+        setVoteMessage(null);
+        setFlashHologram(false);
+      }, 3000);
+    }
+  };
+
   const handleUpdatePosition = async () => {
     if (!selectedWalletAccount?.address || !activeVote?.id || !updateAmount)
       return;
@@ -254,11 +293,9 @@ export function ActiveVote({
     setUpdating(true);
     try {
       // Step 1: Update position on-chain
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       const onChainResult = await updatePosition({
         votePubkey: activeVote.vote_pubkey,
         amount: amount,
-        blockhash: latestBlockhash.blockhash,
       });
 
       if (!onChainResult.success) {
@@ -419,13 +456,17 @@ export function ActiveVote({
                     variant="green"
                     className="w-full py-3 px-6"
                     onClick={() => handleVoteClick("yes")}
-                    disabled={voting || !selectedWalletAccount?.address}
+                    disabled={
+                      voting || !selectedWalletAccount?.address || voteIsOver
+                    }
                   >
-                    {voting
-                      ? "[PROCESSING...]"
-                      : hasVoted
-                        ? "[ALREADY_VOTED]"
-                        : "[EXECUTE_YES_VOTE]"}
+                    {voteIsOver
+                      ? "[VOTE_ENDED]"
+                      : voting
+                        ? "[PROCESSING...]"
+                        : hasVoted
+                          ? "[ALREADY_VOTED]"
+                          : "[EXECUTE_YES_VOTE]"}
                   </CyberButton>
 
                   {voteMessage && (
@@ -469,13 +510,17 @@ export function ActiveVote({
                     variant="pink"
                     className="w-full py-3 px-6"
                     onClick={() => handleVoteClick("no")}
-                    disabled={voting || !selectedWalletAccount?.address}
+                    disabled={
+                      voting || !selectedWalletAccount?.address || voteIsOver
+                    }
                   >
-                    {voting
-                      ? "[PROCESSING...]"
-                      : hasVoted
-                        ? "[ALREADY_VOTED]"
-                        : "[EXECUTE_NO_VOTE]"}
+                    {voteIsOver
+                      ? "[VOTE_ENDED]"
+                      : voting
+                        ? "[PROCESSING...]"
+                        : hasVoted
+                          ? "[ALREADY_VOTED]"
+                          : "[EXECUTE_NO_VOTE]"}
                   </CyberButton>
 
                   {voteMessage && (
@@ -507,7 +552,7 @@ export function ActiveVote({
                   <Users className="w-5 h-5 cyber-purple" />
                   <span className="font-bold cyber-cyan">PLATFORM_VOTES: </span>
                   <span className="cyber-yellow font-bold">
-                    {stats?.total_participants || 0}
+                    {activeVote.total_participants || 0}
                   </span>
                 </div>
               </div>
@@ -522,48 +567,83 @@ export function ActiveVote({
               </div>
             </div>
 
-            {/* Update Position Section - Show only if user has voted */}
+            {/* Update Position Section / Redeem Winnings Section */}
             {hasVoted && selectedWalletAccount?.address && (
               <div className="mt-8">
-                <Terminal
-                  header="UPDATE_POSITION.exe - ADD_MORE_TOKENS"
-                  glowColor="yellow"
-                >
-                  <div className="p-6 bg-cyber-dark">
-                    <p className="cyber-yellow mb-4 text-center">
-                      {">>> INCREASE_YOUR_POSITION_POWER"}
-                    </p>
-                    <div className="flex gap-4 items-center max-w-md mx-auto">
-                      <input
-                        type="number"
-                        value={updateAmount}
-                        onChange={(e) => setUpdateAmount(e.target.value)}
-                        placeholder="Amount to add"
-                        className="flex-1 p-3 bg-cyber-darker border border-cyber-yellow cyber-yellow cyber-font"
-                        disabled={updating}
-                        min="0"
-                        step="0.01"
-                      />
-                      <CyberButton
-                        variant="yellow"
-                        onClick={handleUpdatePosition}
-                        disabled={
-                          updating ||
-                          !updateAmount ||
-                          parseFloat(updateAmount) <= 0
-                        }
-                        className="px-6"
-                      >
-                        {updating ? "[UPDATING...]" : "[ADD_TOKENS]"}
-                      </CyberButton>
-                    </div>
-                    {voteMessage && (
-                      <div className="cyber-yellow font-bold text-sm mt-4 text-center">
-                        {voteMessage}
+                {voteIsOver ? (
+                  // Vote is over - show redeem winnings for winners
+                  userWon ? (
+                    <Terminal
+                      header="REDEEM_WINNINGS.exe - CLAIM_YOUR_REWARDS"
+                      glowColor="green"
+                    >
+                      <div className="p-6 bg-cyber-dark">
+                        <p className="cyber-green mb-4 text-center font-bold text-xl">
+                          {">>> CONGRATULATIONS_YOU_WON!"}
+                        </p>
+                        <p className="cyber-cyan mb-6 text-center">
+                          {`You voted ${voteChoice?.toUpperCase()} and won!`}
+                        </p>
+                        <div className="max-w-md mx-auto">
+                          <CyberButton
+                            variant="green"
+                            className="w-full py-4 px-6 text-lg"
+                            onClick={handleRedeemWinnings}
+                            disabled={redeeming || !activeVote?.vote_pubkey}
+                          >
+                            {redeeming ? "[REDEEMING...]" : "[REDEEM_WINNINGS]"}
+                          </CyberButton>
+                        </div>
+                        {voteMessage && (
+                          <div className="cyber-green font-bold text-sm mt-4 text-center">
+                            {voteMessage}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                </Terminal>
+                    </Terminal>
+                  ) : null // User lost, show nothing
+                ) : (
+                  // Vote is still active - show update position
+                  <Terminal
+                    header="UPDATE_POSITION.exe - ADD_MORE_TOKENS"
+                    glowColor="yellow"
+                  >
+                    <div className="p-6 bg-cyber-dark">
+                      <p className="cyber-yellow mb-4 text-center">
+                        {">>> INCREASE_YOUR_POSITION_POWER"}
+                      </p>
+                      <div className="flex gap-4 items-center max-w-md mx-auto">
+                        <input
+                          type="number"
+                          value={updateAmount}
+                          onChange={(e) => setUpdateAmount(e.target.value)}
+                          placeholder="Amount to add"
+                          className="flex-1 p-3 bg-cyber-darker border border-cyber-yellow cyber-yellow cyber-font"
+                          disabled={updating}
+                          min="0"
+                          step="0.01"
+                        />
+                        <CyberButton
+                          variant="yellow"
+                          onClick={handleUpdatePosition}
+                          disabled={
+                            updating ||
+                            !updateAmount ||
+                            parseFloat(updateAmount) <= 0
+                          }
+                          className="px-6"
+                        >
+                          {updating ? "[UPDATING...]" : "[ADD_TOKENS]"}
+                        </CyberButton>
+                      </div>
+                      {voteMessage && (
+                        <div className="cyber-yellow font-bold text-sm mt-4 text-center">
+                          {voteMessage}
+                        </div>
+                      )}
+                    </div>
+                  </Terminal>
+                )}
               </div>
             )}
           </div>
