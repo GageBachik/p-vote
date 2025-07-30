@@ -36,7 +36,6 @@ import {
 } from "gill";
 
 import * as programClient from "../clients/js/src/generated";
-import BN from "bn.js";
 /** Turn on debug mode */
 global.__GILL_DEBUG__ = true;
 /** Set the debug mode log level (default: `info`) */
