@@ -146,7 +146,6 @@ export function CreateVoteModal({
     setError(null);
 
     try {
-      const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
       // Step 1: Create on-chain vote
       const txResult = await createVoteTransaction({
         title: formData.title,
@@ -154,11 +153,12 @@ export function CreateVoteModal({
         endTime: calculateEndTime(),
         tokenMint:
           formData.selectedToken === "SOL" ? undefined : formData.selectedToken,
-        blockhash: latestBlockhash.blockhash,
-        initialVote: formData.initialVote ? {
-          choice: formData.initialVote,
-          amount: parseFloat(initialVoteAmount) || 1
-        } : undefined,
+        initialVote: formData.initialVote
+          ? {
+              choice: formData.initialVote,
+              amount: parseFloat(initialVoteAmount) || 1,
+            }
+          : undefined,
       });
 
       if (!txResult.success) {
@@ -201,10 +201,14 @@ export function CreateVoteModal({
       }
 
       // Step 3: Cast initial vote if selected (already included in combined transaction)
-      if (formData.initialVote && result.data.id && txResult.initialVoteSignature) {
+      if (
+        formData.initialVote &&
+        result.data.id &&
+        txResult.initialVoteSignature
+      ) {
         // Parse the amount, default to 1 if not provided
         const amount = parseFloat(initialVoteAmount) || 1;
-        
+
         // Store the initial vote in database (transaction already executed)
         await fetch(`/api/votes/${result.data.id}/participants`, {
           method: "POST",
@@ -637,7 +641,7 @@ export function CreateVoteModal({
                     </button>
                   </div>
                 </div>
-                
+
                 {/* Token amount input - shows when vote choice is selected */}
                 {formData.initialVote && (
                   <div className="mt-4">
@@ -655,7 +659,13 @@ export function CreateVoteModal({
                       step="0.01"
                     />
                     <div className="text-xs cyber-yellow mt-1">
-                      Enter the amount of {formData.selectedToken === "SOL" ? "SOL" : availableTokens.find(t => t.mint === formData.selectedToken)?.symbol || "tokens"} to vote with
+                      Enter the amount of{" "}
+                      {formData.selectedToken === "SOL"
+                        ? "SOL"
+                        : availableTokens.find(
+                            (t) => t.mint === formData.selectedToken
+                          )?.symbol || "tokens"}{" "}
+                      to vote with
                     </div>
                   </div>
                 )}
