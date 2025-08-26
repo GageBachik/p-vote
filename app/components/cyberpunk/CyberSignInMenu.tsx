@@ -35,6 +35,8 @@ export function CyberSignInMenu({ isOpen, onClose }: CyberSignInMenuProps) {
       >
         <CyberSignInMenuItem
           onConnect={(account) => {
+
+            console.log("Selected account", account, wallet);
             setSelectedWalletAccount(account);
             onClose();
           }}

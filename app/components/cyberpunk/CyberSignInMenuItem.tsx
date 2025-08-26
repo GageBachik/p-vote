@@ -1,6 +1,7 @@
 "use client";
 
 import type { UiWallet, UiWalletAccount } from "@wallet-standard/react";
+import { useConnect, uiWalletAccountsAreSame } from "@wallet-standard/react";
 import React, { useCallback } from "react";
 
 interface CyberSignInMenuItemProps {
@@ -14,27 +15,40 @@ export function CyberSignInMenuItem({
   onError,
   wallet,
 }: CyberSignInMenuItemProps) {
+  const [isConnecting, connect] = useConnect(wallet);
+  
   const handleConnectClick = useCallback(
     async (e: React.MouseEvent) => {
       e.preventDefault();
       try {
-        // Ensure the wallet is ready and has accounts
-        if (!wallet.accounts.length) {
-          // @ts-expect-error Some wallets may not have a connect method
-          await wallet.connect?.(); // Some wallets may require this
+        const existingAccounts = [...wallet.accounts];
+        const nextAccounts = await connect();
+        
+        // Try to choose the first never-before-seen account
+        for (const nextAccount of nextAccounts) {
+          if (!existingAccounts.some(existingAccount => 
+            uiWalletAccountsAreSame(nextAccount, existingAccount)
+          )) {
+            onConnect(nextAccount);
+            return;
+          }
         }
-        const account = wallet.accounts[0]; // Or let the user choose one
-        onConnect(account);
+        
+        // Failing that, choose the first account in the list
+        if (nextAccounts[0]) {
+          onConnect(nextAccounts[0]);
+        }
       } catch (e) {
         onError(e);
       }
     },
-    [wallet, onConnect, onError]
+    [connect, onConnect, onError, wallet.accounts]
   );
 
   return (
     <button
       onClick={handleConnectClick}
+      disabled={isConnecting}
       className="w-full cyber-hover neon-border-green p-3 bg-cyber-dark flex items-center space-x-3"
     >
       <div className="flex items-center space-x-3 flex-1">
@@ -43,7 +57,9 @@ export function CyberSignInMenuItem({
           {wallet.name.toUpperCase()}
         </span>
       </div>
-      <span className="text-xs cyber-cyan">[CONNECT]</span>
+      <span className="text-xs cyber-cyan">
+        {isConnecting ? "[CONNECTING...]" : "[CONNECT]"}
+      </span>
     </button>
   );
 }

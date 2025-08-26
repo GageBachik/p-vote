@@ -38,7 +38,8 @@ export function balanceSubscribe(
     })
     .catch(e => {
       if (e !== EXPLICIT_ABORT_TOKEN) {
-        next(e /* err */);
+        console.error("Error fetching initial balance for", address, ":", e);
+        next(null /* err */, 0 /* data */);
       }
     });
   // Subscribe for updates to that balance.

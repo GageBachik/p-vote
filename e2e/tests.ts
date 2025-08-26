@@ -1,98 +1,102 @@
 // Comprehensive tests for the jiminy voting program
 // This file tests all instructions and edge cases
 
-import { loadKeypairSignerFromFile, } from "gill/node";
 import {
-  TOKEN_PROGRAM_ADDRESS,
-  getAssociatedTokenAccountAddress,
-  getCreateAssociatedTokenIdempotentInstruction,
-  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-  getTransferInstruction
-} from "gill/programs/token";
-import {
+  type Address,
+  address,
+  compileTransaction,
   createSolanaClient,
   createTransaction,
-  address,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
+  generateKeyPairSigner,
+  getAddressDecoder,
   getAddressEncoder,
   getProgramDerivedAddress,
-  generateKeyPairSigner,
-  lamports,
   getSignatureFromTransaction,
-  signTransactionMessageWithSigners,
-  sendTransactionWithoutConfirmingFactory,
-  compileTransaction,
-  Address,
-  FixedSizeDecoder,
-  FixedSizeEncoder,
-  getAddressDecoder,
   getStructDecoder,
   getStructEncoder,
+  getU8Decoder,
+  getU8Encoder,
   getU32Decoder,
   getU32Encoder,
   getU64Decoder,
   getU64Encoder,
-  getU8Decoder,
-  getU8Encoder
+  lamports,
+  sendTransactionWithoutConfirmingFactory,
+  signTransactionMessageWithSigners,
 } from "gill";
+import { loadKeypairSignerFromFile } from "gill/node";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
+  getAssociatedTokenAccountAddress,
+  getCreateAssociatedTokenIdempotentInstruction,
+  getTransferInstruction,
+  TOKEN_PROGRAM_ADDRESS,
+} from "gill/programs/token";
 
 import * as programClient from "../clients/js/src/generated";
+
 /** Turn on debug mode */
 global.__GILL_DEBUG__ = true;
 /** Set the debug mode log level (default: `info`) */
 global.__GILL_DEBUG_LEVEL__ = "debug";
 
-
 export interface TokenAccount {
   mint: Address;
   owner: Address;
-  amount: bigint;          // u64
-  delegateOption: number;  // u32  0 = none, 1 = some
+  amount: bigint; // u64
+  delegateOption: number; // u32  0 = none, 1 = some
   delegate: Address;
-  state: number;           // u8   1 = Initialized, 2 = Frozen
-  isNativeOption: number;  // u32
-  isNative: bigint;        // u64
+  state: number; // u8   1 = Initialized, 2 = Frozen
+  isNativeOption: number; // u32
+  isNative: bigint; // u64
   delegatedAmount: bigint; // u64
   closeAuthOption: number; // u32
   closeAuthority: Address;
 }
 
-export const tokenAccountDecoder: FixedSizeDecoder<TokenAccount> = getStructDecoder([
-  ["mint", getAddressDecoder()],
-  ["owner", getAddressDecoder()],
-  ["amount", getU64Decoder()],
-  ["delegateOption", getU32Decoder()],   // COption header
-  ["delegate", getAddressDecoder()],
-  ["state", getU8Decoder()],
-  ["isNativeOption", getU32Decoder()],
-  ["isNative", getU64Decoder()],
-  ["delegatedAmount", getU64Decoder()],
-  ["closeAuthOption", getU32Decoder()],
-  ["closeAuthority", getAddressDecoder()],
-]);
+export const tokenAccountDecoder: FixedSizeDecoder<TokenAccount> =
+  getStructDecoder([
+    ["mint", getAddressDecoder()],
+    ["owner", getAddressDecoder()],
+    ["amount", getU64Decoder()],
+    ["delegateOption", getU32Decoder()], // COption header
+    ["delegate", getAddressDecoder()],
+    ["state", getU8Decoder()],
+    ["isNativeOption", getU32Decoder()],
+    ["isNative", getU64Decoder()],
+    ["delegatedAmount", getU64Decoder()],
+    ["closeAuthOption", getU32Decoder()],
+    ["closeAuthority", getAddressDecoder()],
+  ]);
 
-export const tokenAccountEncoder: FixedSizeEncoder<TokenAccount> = getStructEncoder([
-  ["mint", getAddressEncoder()],
-  ["owner", getAddressEncoder()],
-  ["amount", getU64Encoder()],
-  ["delegateOption", getU32Encoder()],
-  ["delegate", getAddressEncoder()],
-  ["state", getU8Encoder()],
-  ["isNativeOption", getU32Encoder()],
-  ["isNative", getU64Encoder()],
-  ["delegatedAmount", getU64Encoder()],
-  ["closeAuthOption", getU32Encoder()],
-  ["closeAuthority", getAddressEncoder()],
-]);
+export const tokenAccountEncoder: FixedSizeEncoder<TokenAccount> =
+  getStructEncoder([
+    ["mint", getAddressEncoder()],
+    ["owner", getAddressEncoder()],
+    ["amount", getU64Encoder()],
+    ["delegateOption", getU32Encoder()],
+    ["delegate", getAddressEncoder()],
+    ["state", getU8Encoder()],
+    ["isNativeOption", getU32Encoder()],
+    ["isNative", getU64Encoder()],
+    ["delegatedAmount", getU64Encoder()],
+    ["closeAuthOption", getU32Encoder()],
+    ["closeAuthority", getAddressEncoder()],
+  ]);
 
-const PROGRAM_ID = address('pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu');
+const PROGRAM_ID = address("pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu");
 
 // Test setup
 const authority = await loadKeypairSignerFromFile("~/.config/solana/id.json");
 const enc = getAddressEncoder();
 
-const { rpc, rpcSubscriptions, sendAndConfirmTransaction } = createSolanaClient({
-  urlOrMoniker: "localnet",
-});
+const { rpc, rpcSubscriptions, sendAndConfirmTransaction } = createSolanaClient(
+  {
+    urlOrMoniker: "localnet",
+  },
+);
 
 const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 
@@ -100,12 +104,12 @@ const { value: latestBlockhash } = await rpc.getLatestBlockhash().send();
 console.log("\n=== Test 1: Initialize Platform ===");
 const [platformPda, platformBump] = await getProgramDerivedAddress({
   programAddress: PROGRAM_ID,
-  seeds: ["config"]
+  seeds: ["config"],
 });
 
 const [vaultPda, vaultBump] = await getProgramDerivedAddress({
   programAddress: PROGRAM_ID,
-  seeds: [enc.encode(platformPda)]
+  seeds: [enc.encode(platformPda)],
 });
 
 const fee = Buffer.alloc(2);
@@ -117,7 +121,7 @@ const initPlatIx = programClient.getInitializePlatformInstruction({
   vault: vaultPda,
   fee: fee,
   vaultBump: vaultBump,
-  platformBump: platformBump
+  platformBump: platformBump,
 });
 
 const initializePlatformTransaction = createTransaction({
@@ -128,7 +132,9 @@ const initializePlatformTransaction = createTransaction({
 });
 
 try {
-  const initializePlatform = await sendAndConfirmTransaction(initializePlatformTransaction);
+  const initializePlatform = await sendAndConfirmTransaction(
+    initializePlatformTransaction,
+  );
   console.log("✅ Initialize Platform Success:", initializePlatform);
 } catch (error) {
   console.log("❌ Initialize Platform Failed:", error);
@@ -142,15 +148,24 @@ console.log("\n=== Test 2: Initialize Vote ===");
 const vote = await generateKeyPairSigner();
 const [voteVaultPda, voteVaultBump] = await getProgramDerivedAddress({
   programAddress: PROGRAM_ID,
-  seeds: [enc.encode(vote.address)]
+  seeds: [enc.encode(vote.address)],
 });
 
 const timeToAdd = Buffer.alloc(8);
 timeToAdd.writeBigInt64LE(3600n); // 1 hour from now
 
-const voteVaultTokenAccount = await getAssociatedTokenAccountAddress(usdcMint, voteVaultPda);
-const vaultTokenAccount = await getAssociatedTokenAccountAddress(usdcMint, vaultPda);
-const authorityTokenAccount = await getAssociatedTokenAccountAddress(usdcMint, authority.address);
+const voteVaultTokenAccount = await getAssociatedTokenAccountAddress(
+  usdcMint,
+  voteVaultPda,
+);
+const vaultTokenAccount = await getAssociatedTokenAccountAddress(
+  usdcMint,
+  vaultPda,
+);
+const authorityTokenAccount = await getAssociatedTokenAccountAddress(
+  usdcMint,
+  authority.address,
+);
 
 // // Create necessary token accounts
 // const createVoteVaultAtaIx = getCreateAssociatedTokenIdempotentInstruction({
@@ -184,7 +199,7 @@ const initVoteIx = programClient.getInitializeVoteInstruction({
   voteVaultTokenAccount,
   vaultTokenAccount,
   associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-  timeToAdd
+  timeToAdd,
 });
 
 // console.log("initializeVoteIx:", initVoteIx);
@@ -197,7 +212,9 @@ const initializeVoteTransaction = createTransaction({
 });
 
 try {
-  const initializeVote = await sendAndConfirmTransaction(initializeVoteTransaction);
+  const initializeVote = await sendAndConfirmTransaction(
+    initializeVoteTransaction,
+  );
   console.log("✅ Initialize Vote Success:", initializeVote);
 } catch (error) {
   console.log("❌ Initialize Vote Failed:", error);
@@ -208,7 +225,7 @@ try {
 
 // Test 3: Initialize Position
 console.log("\n=== Test 3: Initialize Position ===");
-// First we need to artificially give our authority some 
+// First we need to artificially give our authority some
 // USDC tokens to create a position
 
 // Ask RPC for base‑64 data
@@ -216,11 +233,11 @@ const { value } = await rpc
   .getAccountInfo(authorityTokenAccount, { encoding: "base64" })
   .send();
 if (!value?.data) throw new Error("Account not found");
-const raw = Buffer.from(value.data[0], "base64");      // 165 bytes
+const raw = Buffer.from(value.data[0], "base64"); // 165 bytes
 const decoded = tokenAccountDecoder.decode(raw);
 console.log("Current amount:", decoded.amount.toString());
 /** Example mutation: add 1 token (mind the mint’s decimals!) */
-const ONE_THOUSAND_TOKEN = 1_000_000_000n;              // if mint.decimals == 6
+const ONE_THOUSAND_TOKEN = 1_000_000_000n; // if mint.decimals == 6
 decoded.amount += ONE_THOUSAND_TOKEN;
 const newRawBytes = tokenAccountEncoder.encode(decoded);
 const hex = Buffer.from(newRawBytes).toString("hex");
@@ -237,15 +254,15 @@ await fetch("http://localhost:8899", {
     params: [
       "6Vz29xBqepcsziDh6ZpBLzQXHc7xVkvr6yu5XjnKmtiR",
       {
-        data: hex
-      }
-    ]
-  })
+        data: hex,
+      },
+    ],
+  }),
 });
 
 const [positionPda, positionBump] = await getProgramDerivedAddress({
   programAddress: PROGRAM_ID,
-  seeds: ["position", enc.encode(vote.address), enc.encode(authority.address)]
+  seeds: ["position", enc.encode(vote.address), enc.encode(authority.address)],
 });
 
 const positionAmount = Buffer.alloc(8);
@@ -296,7 +313,9 @@ const initializePositionTransaction = createTransaction({
 // console.log("initializePositionTransaction:", getSignatureFromTransaction(signedInitializePositionTransaction));
 
 try {
-  const initializePosition = await sendAndConfirmTransaction(initializePositionTransaction);
+  const initializePosition = await sendAndConfirmTransaction(
+    initializePositionTransaction,
+  );
   console.log("✅ Initialize Position Success:", initializePosition);
 
   // Verify position was created
@@ -336,12 +355,19 @@ const updatePositionTransaction = createTransaction({
   latestBlockhash,
 });
 
-const signedUpdatePositionTransaction = await signTransactionMessageWithSigners(updatePositionTransaction);
+const signedUpdatePositionTransaction = await signTransactionMessageWithSigners(
+  updatePositionTransaction,
+);
 
-console.log("updatePositionTransaction:", getSignatureFromTransaction(signedUpdatePositionTransaction));
+console.log(
+  "updatePositionTransaction:",
+  getSignatureFromTransaction(signedUpdatePositionTransaction),
+);
 
 try {
-  const updatePosition = await sendAndConfirmTransaction(updatePositionTransaction);
+  const updatePosition = await sendAndConfirmTransaction(
+    updatePositionTransaction,
+  );
   console.log("✅ Update Position Success:", updatePosition);
 } catch (error) {
   console.log("❌ Update Position Failed:", error);
@@ -369,7 +395,9 @@ const updatePlatformTransaction = createTransaction({
 });
 
 try {
-  const updatePlatform = await sendAndConfirmTransaction(updatePlatformTransaction);
+  const updatePlatform = await sendAndConfirmTransaction(
+    updatePlatformTransaction,
+  );
   console.log("✅ Update Platform Success:", updatePlatform);
 } catch (error) {
   console.log("❌ Update Platform Failed:", error);
@@ -380,15 +408,19 @@ console.log("\n=== Test 6: Error Case - Vote After Deadline ===");
 
 // Create a vote with very short deadline
 const expiredVote = await generateKeyPairSigner();
-const [expiredVoteVaultPda, expiredVoteVaultBump] = await getProgramDerivedAddress({
-  programAddress: PROGRAM_ID,
-  seeds: [enc.encode(expiredVote.address)]
-});
+const [expiredVoteVaultPda, expiredVoteVaultBump] =
+  await getProgramDerivedAddress({
+    programAddress: PROGRAM_ID,
+    seeds: [enc.encode(expiredVote.address)],
+  });
 
 const shortTimeToAdd = Buffer.alloc(8);
 shortTimeToAdd.writeBigInt64LE(1n); // 1 second from now
 
-const expiredVoteVaultTokenAccount = await getAssociatedTokenAccountAddress(usdcMint, expiredVoteVaultPda);
+const expiredVoteVaultTokenAccount = await getAssociatedTokenAccountAddress(
+  usdcMint,
+  expiredVoteVaultPda,
+);
 
 const initExpiredVoteIx = programClient.getInitializeVoteInstruction({
   authority,
@@ -400,7 +432,7 @@ const initExpiredVoteIx = programClient.getInitializeVoteInstruction({
   voteVaultTokenAccount: expiredVoteVaultTokenAccount,
   vaultTokenAccount,
   associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ADDRESS,
-  timeToAdd: shortTimeToAdd
+  timeToAdd: shortTimeToAdd,
 });
 
 const initExpiredVoteTransaction = createTransaction({
@@ -414,12 +446,16 @@ await sendAndConfirmTransaction(initExpiredVoteTransaction);
 
 // Wait for vote to expire
 console.log("Waiting for vote to expire...");
-await new Promise(resolve => setTimeout(resolve, 3000)); // Wait 3 seconds
+await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 3 seconds
 
 // Try to create position after deadline
 const [expiredPositionPda] = await getProgramDerivedAddress({
   programAddress: PROGRAM_ID,
-  seeds: ["position", enc.encode(expiredVote.address), enc.encode(authority.address)]
+  seeds: [
+    "position",
+    enc.encode(expiredVote.address),
+    enc.encode(authority.address),
+  ],
 });
 
 const expiredPositionIx = programClient.getIntitializePositionInstruction({
@@ -456,7 +492,7 @@ console.log("\n=== Test 7: Calculate Fees Logic ===");
 console.log("Testing fee calculation logic:");
 
 function testCalculateFees(amount: number, bps: number): number {
-  return Math.floor(amount * bps / 10000);
+  return Math.floor((amount * bps) / 10000);
 }
 
 const testCases = [
@@ -470,14 +506,20 @@ let feeTestsPassed = 0;
 for (const testCase of testCases) {
   const result = testCalculateFees(testCase.amount, testCase.bps);
   if (result === testCase.expected) {
-    console.log(`✅ Fee test passed: ${testCase.amount} * ${testCase.bps} BPS = ${result}`);
+    console.log(
+      `✅ Fee test passed: ${testCase.amount} * ${testCase.bps} BPS = ${result}`,
+    );
     feeTestsPassed++;
   } else {
-    console.log(`❌ Fee test failed: ${testCase.amount} * ${testCase.bps} BPS = ${result}, expected ${testCase.expected}`);
+    console.log(
+      `❌ Fee test failed: ${testCase.amount} * ${testCase.bps} BPS = ${result}, expected ${testCase.expected}`,
+    );
   }
 }
 
-console.log(`\n✅ All tests completed! (${feeTestsPassed}/${testCases.length} fee tests passed)`);
+console.log(
+  `\n✅ All tests completed! (${feeTestsPassed}/${testCases.length} fee tests passed)`,
+);
 console.log("\nSummary of completed tests:");
 console.log("- Initialize Platform ✓");
 console.log("- Initialize Vote ✓");
@@ -487,5 +529,9 @@ console.log("- Update Platform ✓");
 console.log("- Error Case: Vote After Deadline ✓");
 console.log("- Calculate Fees Logic ✓");
 
-console.log("\nNote: For full testing including token transfers and redemption,");
-console.log("you would need actual tokens in the authority account or use a test mint.");
+console.log(
+  "\nNote: For full testing including token transfers and redemption,",
+);
+console.log(
+  "you would need actual tokens in the authority account or use a test mint.",
+);

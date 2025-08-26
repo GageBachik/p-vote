@@ -12,6 +12,7 @@ export const SelectedWalletAccountContext = createContext<
 >([
     undefined /* selectedWalletAccount */,
     function setSelectedWalletAccount() {
+        console.log("No SelectedWalletAccountContextProvider in tree");
         /* empty */
     },
 ]);

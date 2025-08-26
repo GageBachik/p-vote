@@ -2215,7 +2215,7 @@
 
 "@wallet-standard/react@^1.0.1":
   version "1.0.1"
-  resolved "https://registry.npmjs.org/@wallet-standard/react/-/react-1.0.1.tgz"
+  resolved "https://registry.yarnpkg.com/@wallet-standard/react/-/react-1.0.1.tgz#bfdce3bf2be1e0e31cd1cd6a55a773a5e1c02d01"
   integrity sha512-StpPv234R94MmJCCUZurQvQSsX6Xe1eOd2lNgwVonvSVdPqCNVS/haVpdrBMx0wX1Ut24X77qyBLP7SGxK5OUg==
   dependencies:
     "@wallet-standard/react-core" "^1.0.1"
