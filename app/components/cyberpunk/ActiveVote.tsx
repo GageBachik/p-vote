@@ -17,8 +17,6 @@ import { useRealTimeStats, trackVoteView } from "@/app/hooks/useAnalytics";
 import { useSolanaVoting } from "@/app/hooks/useSolanaVoting";
 import { VoteAmountModal } from "./VoteAmountModal";
 import { Address } from "gill";
-import { add } from "@raydium-io/raydium-sdk-v2";
-import { on } from "events";
 // import type { Vote } from "@/app/lib/db/types"; // Currently unused
 
 interface ActiveVoteProps {
