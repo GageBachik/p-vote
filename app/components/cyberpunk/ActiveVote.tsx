@@ -16,6 +16,9 @@ import {
 import { useRealTimeStats, trackVoteView } from "@/app/hooks/useAnalytics";
 import { useSolanaVoting } from "@/app/hooks/useSolanaVoting";
 import { VoteAmountModal } from "./VoteAmountModal";
+import { Address } from "gill";
+import { add } from "@raydium-io/raydium-sdk-v2";
+import { on } from "events";
 // import type { Vote } from "@/app/lib/db/types"; // Currently unused
 
 interface ActiveVoteProps {
@@ -44,9 +47,15 @@ export function ActiveVote({
     null
   );
   const [onChainData, setOnChainData] = useState<{
+    title: string;
+    creator: string | undefined;
+    endTime: Date;
     yesVotes: number;
     noVotes: number;
-  } | null>(null);
+    totalParticipants: number;
+    isActive: boolean;
+    token?: Address;
+} | null>(null);
   const [redeeming, setRedeeming] = useState<boolean>(false);
 
   // Fetch active vote data (get 6 latest)
@@ -117,10 +126,9 @@ export function ActiveVote({
         const voteState = await getVoteState(activeVote.vote_pubkey);
         // Convert from lamports (or token units) to actual token amount
         // USDC has 6 decimals
-        setOnChainData({
-          yesVotes: voteState.yesVotes / 1_000_000,
-          noVotes: voteState.noVotes / 1_000_000,
-        });
+        voteState.yesVotes = voteState.yesVotes / 1_000_000;
+        voteState.noVotes = voteState.noVotes / 1_000_000;
+        setOnChainData(voteState);
       } catch (error) {
         console.error("Failed to fetch on-chain vote data:", error);
       }
@@ -292,10 +300,17 @@ export function ActiveVote({
 
     setUpdating(true);
     try {
+      let mint = undefined;
+      if (onChainData){
+        if (onChainData.token) {
+          mint = onChainData.token.toString();
+        }
+      }
       // Step 1: Update position on-chain
       const onChainResult = await updatePosition({
         votePubkey: activeVote.vote_pubkey,
         amount: amount,
+        tokenMint: mint
       });
 
       if (!onChainResult.success) {
@@ -441,7 +456,17 @@ export function ActiveVote({
                     })}
                   </div>
                   <div className="text-sm mb-6 cyber-cyan">
-                    $USDC_TOKENS ({yesPercentage.toFixed(1)}%)
+                    ${
+                      !onChainData
+                        ? "SYNCING"
+                        : onChainData!.token!.toString() == "So11111111111111111111111111111111111111112"
+                        ? "SOL_TOKENS"
+                      : onChainData!.token!.toString() == "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                        ? "USDC_TOKENS"
+                        : onChainData!.token!.toString() == "BzrRNRZvKKHqkxXzm49eyDRG8ZRgMHoBoAzmPrPBpump"
+                        ? "DVOTE_TOKENS"
+                        : "VOTE_TOKENS"
+                    } ({yesPercentage.toFixed(1)}%)
                   </div>
 
                   {/* Cyber Progress Bar */}
@@ -495,7 +520,17 @@ export function ActiveVote({
                     })}
                   </div>
                   <div className="text-sm mb-6 cyber-cyan">
-                    $USDC_TOKENS ({noPercentage.toFixed(1)}%)
+                    ${
+                      !onChainData
+                        ? "SYNCING"
+                        : onChainData!.token!.toString() == "So11111111111111111111111111111111111111112"
+                        ? "SOL_TOKENS"
+                      : onChainData!.token!.toString() == "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                        ? "USDC_TOKENS"
+                        : onChainData!.token!.toString() == "BzrRNRZvKKHqkxXzm49eyDRG8ZRgMHoBoAzmPrPBpump"
+                        ? "DVOTE_TOKENS"
+                        : "VOTE_TOKENS"
+                    } ({noPercentage.toFixed(1)}%)
                   </div>
 
                   {/* Cyber Progress Bar */}

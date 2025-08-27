@@ -79,7 +79,7 @@ export function useSolanaVoting() {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const { rpc, sendAndConfirmTransaction } = useContext(RpcContext);
   const { chain: currentChain } = useContext(ChainContext);
-  const transactionSendingSigner = useWalletAccountTransactionSendingSigner(selectedWalletAccount!, currentChain)
+  const transactionSendingSigner = useWalletAccountTransactionSendingSigner(selectedWalletAccount!, currentChain);
 
   // Get wallet tokens (simplified for now)
   const getWalletTokens = useCallback(async () => {
@@ -87,16 +87,51 @@ export function useSolanaVoting() {
       throw new Error('Wallet not connected');
     }
 
-    // TODO: Implement actual RPC calls to fetch user's token accounts
-    // For now, return mock data
+  try {
+    // Define the token accounts for each mint
+    const usdcMint = address('EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v');
+    const dvoteMint = address('BzrRNRZvKKHqkxXzm49eyDRG8ZRgMHoBoAzmPrPBpump');
+    
+    // Get associated token account addresses
+    const usdcTokenAccount = await getAssociatedTokenAccountAddress(usdcMint, address(selectedWalletAccount.address));
+    const dvoteTokenAccount = await getAssociatedTokenAccountAddress(dvoteMint, address(selectedWalletAccount.address));
+
+    // Run balance checks in parallel
+    const [usdcResult, dvoteResult] = await Promise.allSettled([
+      rpc.getTokenAccountBalance(usdcTokenAccount, { commitment: 'confirmed' }).send(),
+      rpc.getTokenAccountBalance(dvoteTokenAccount, { commitment: 'confirmed' }).send()
+    ]);
+
+
+    // Extract balances or default to 0
+    const usdcBalance = usdcResult.status === 'fulfilled' && usdcResult.value.value?.uiAmount
+      ? usdcResult.value.value.uiAmount
+      : 0;
+
+    const dvoteBalance = dvoteResult.status === 'fulfilled' && dvoteResult.value.value?.uiAmount
+      ? dvoteResult.value.value.uiAmount
+      : 0;
+
     return [
-      // {
-      //   mint: 'So11111111111111111111111111111111111111112',
-      //   symbol: 'SOL',
-      //   balance: 2.5,
-      //   decimals: 9,
-      //   name: 'Solana'
-      // },
+      {
+        mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        symbol: 'USDC',
+        balance: usdcBalance,
+        decimals: 6,
+        name: 'USD Coin'
+      },
+      {
+        mint: 'BzrRNRZvKKHqkxXzm49eyDRG8ZRgMHoBoAzmPrPBpump',
+        symbol: 'DVOTE',
+        balance: dvoteBalance,
+        decimals: 6,
+        name: 'DVOTE'
+      }
+    ];
+  } catch (error) {
+    console.error('Error fetching token balances:', error);
+    // Return tokens with 0 balance on error
+    return [
       {
         mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
         symbol: 'USDC',
@@ -104,14 +139,15 @@ export function useSolanaVoting() {
         decimals: 6,
         name: 'USD Coin'
       },
-      // {
-      //   mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB',
-      //   symbol: 'USDT',
-      //   balance: 75.25,
-      //   decimals: 6,
-      //   name: 'Tether USD'
-      // }
+      {
+        mint: 'BzrRNRZvKKHqkxXzm49eyDRG8ZRgMHoBoAzmPrPBpump',
+        symbol: 'DVOTE',
+        balance: 0,
+        decimals: 6,
+        name: 'DVOTE'
+      }
     ];
+  }
   }, [selectedWalletAccount]);
 
   // Create a vote on-chain
