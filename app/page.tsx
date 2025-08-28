@@ -14,12 +14,10 @@ import { DegenHeader } from "./components/cyberpunk/DegenHeader";
 import { ActiveVote } from "./components/cyberpunk/ActiveVote";
 import { VoteHistory } from "./components/cyberpunk/VoteHistory";
 import { useCyberpunkEffects } from "./components/cyberpunk/useCyberpunkEffects";
-import { CyberSignInMenu } from "./components/cyberpunk/CyberSignInMenu";
 import { ToastContainer, useToasts } from "./components/cyberpunk/Toast";
 
 function DegenVoteApp() {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
   const [selectedVoteId, setSelectedVoteId] = useState<string | null>(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { toasts, addToast, removeToast } = useToasts();
@@ -43,53 +41,26 @@ function DegenVoteApp() {
     <div className="min-h-screen">
       <DataStreams />
 
+      {/* Always show navigation - CyberNav when not authenticated, DegenHeader when authenticated */}
       {selectedWalletAccount ? (
-        <>
-          <DegenHeader onVoteCreated={handleVoteCreated} />
-          <main className="container mx-auto px-4">
-            <ActiveVote 
-              selectedVoteId={selectedVoteId} 
-              onVoteSelect={setSelectedVoteId}
-              refreshTrigger={refreshTrigger}
-            />
-            <VoteHistory 
-              onVoteSelect={setSelectedVoteId}
-              refreshTrigger={refreshTrigger}
-            />
-          </main>
-        </>
+        <DegenHeader onVoteCreated={handleVoteCreated} />
       ) : (
-        <div className="min-h-screen flex flex-col">
-          <CyberNav />
-          <div className="flex-1 flex items-center justify-center">
-            <div className="terminal-window neon-glow-green p-8 text-center">
-              <div
-                className="terminal-header mb-4 cyber-hover cursor-pointer"
-                onClick={() => setIsSignInModalOpen(true)}
-              >
-                CONNECTION_REQUIRED.exe - WALLET_NOT_DETECTED
-              </div>
-              <p className="cyber-green text-lg cyber-font mb-4">
-                {">>> CONNECT_WALLET_TO_ACCESS_DEGENVOTE_TERMINAL"}
-              </p>
-              <p className="cyber-cyan text-sm mb-6">
-                Authentication required to participate in decentralized voting
-              </p>
-              <button
-                onClick={() => setIsSignInModalOpen(true)}
-                className="cyber-hover neon-glow-green bg-cyber-green text-black font-bold py-3 px-6 cyber-font"
-              >
-                [INITIATE_CONNECTION]
-              </button>
-            </div>
-          </div>
-        </div>
+        <CyberNav />
       )}
 
-      <CyberSignInMenu
-        isOpen={isSignInModalOpen}
-        onClose={() => setIsSignInModalOpen(false)}
-      />
+      {/* Always show main content regardless of authentication */}
+      <main className="container mx-auto px-4">
+        <ActiveVote 
+          selectedVoteId={selectedVoteId} 
+          onVoteSelect={setSelectedVoteId}
+          refreshTrigger={refreshTrigger}
+          addToast={addToast}
+        />
+        <VoteHistory 
+          onVoteSelect={setSelectedVoteId}
+          refreshTrigger={refreshTrigger}
+        />
+      </main>
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>

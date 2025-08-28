@@ -55,7 +55,7 @@ export function CreateVoteModal({
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const { rpc } = useContext(RpcContext);
   const { getWalletTokens, createVoteTransaction, castVote } =
-    useSolanaVoting();
+    useSolanaVoting(selectedWalletAccount);
   const [currentStep, setCurrentStep] = useState(1);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -23,12 +23,14 @@ interface ActiveVoteProps {
   selectedVoteId?: string | null;
   onVoteSelect?: (voteId: string) => void;
   refreshTrigger?: number;
+  addToast?: (toast: { type: 'success' | 'error' | 'warning' | 'info'; title: string; message?: string; duration?: number }) => void;
 }
 
 export function ActiveVote({
   selectedVoteId,
   onVoteSelect,
   refreshTrigger,
+  addToast,
 }: ActiveVoteProps) {
   const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
   const { rpc } = useContext(RpcContext);
@@ -100,13 +102,13 @@ export function ActiveVote({
 
   // Get real-time stats
   const { stats } = useRealTimeStats(30000); // Update every 30 seconds
-  // Solana voting functions
+  // Solana voting functions - now handles null wallet properly
   const {
     castVote: castVoteOnChain,
     updatePosition,
     getVoteState,
     redeemWinnings,
-  } = useSolanaVoting();
+  } = useSolanaVoting(selectedWalletAccount);
 
   // Track view when component loads and vote changes
   useEffect(() => {
@@ -181,7 +183,21 @@ export function ActiveVote({
   };
 
   const handleVoteClick = (voteType: "yes" | "no") => {
-    if (!selectedWalletAccount?.address || !activeVote?.id) {
+    if (!selectedWalletAccount?.address) {
+      triggerShake(voteType);
+      // Show toast message to prompt wallet connection
+      if (addToast) {
+        addToast({
+          type: 'warning',
+          title: 'WALLET_CONNECTION_REQUIRED',
+          message: 'Please connect your wallet to participate in voting',
+          duration: 4000
+        });
+      }
+      return;
+    }
+    
+    if (!activeVote?.id) {
       triggerShake(voteType);
       return;
     }

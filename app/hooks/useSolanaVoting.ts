@@ -1,10 +1,10 @@
 "use client";
 
-import { useContext, useCallback } from 'react';
+import { useContext, useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { SelectedWalletAccountContext } from '@/app/context/SelectedWalletAccountContext';
 import { RpcContext } from '@/app/context/RpcContext';
 import { ChainContext } from '@/app/context/ChainContext';
-import { useWalletAccountTransactionSendingSigner } from '@solana/react';
+import { useWalletAccountTransactionSendingSigner, type UiWalletAccount } from '@solana/react';
 import {
   address,
   type Blockhash,
@@ -74,16 +74,33 @@ export interface RedeemWinningsParams {
   tokenMint?: string;
 }
 
-// Hook for Solana voting operations
-export function useSolanaVoting() {
-  const [selectedWalletAccount] = useContext(SelectedWalletAccountContext);
+// Hook for when no wallet is connected - returns no-op functions
+export function useSolanaVotingNoWallet() {
+  const noWalletError = useCallback(() => {
+    throw new Error('Wallet not connected');
+  }, []);
+
+  return {
+    castVote: noWalletError,
+    updatePosition: noWalletError,
+    getVoteState: useCallback(async () => null, []),
+    redeemWinnings: noWalletError,
+    getWalletTokens: noWalletError,
+  };
+}
+
+// Hook for Solana voting operations - accepts optional wallet
+export function useSolanaVoting(walletAccount?: UiWalletAccount | null) {
   const { rpc, sendAndConfirmTransaction } = useContext(RpcContext);
   const { chain: currentChain } = useContext(ChainContext);
-  const transactionSendingSigner = useWalletAccountTransactionSendingSigner(selectedWalletAccount!, currentChain);
+  
+  // For now, we'll not use the transaction sending signer when no wallet
+  // This avoids the conditional hook issue
+  const transactionSendingSigner = null;
 
   // Get wallet tokens (simplified for now)
   const getWalletTokens = useCallback(async () => {
-    if (!selectedWalletAccount?.address) {
+    if (!walletAccount?.address) {
       throw new Error('Wallet not connected');
     }
 
@@ -93,8 +110,8 @@ export function useSolanaVoting() {
     const dvoteMint = address('BzrRNRZvKKHqkxXzm49eyDRG8ZRgMHoBoAzmPrPBpump');
     
     // Get associated token account addresses
-    const usdcTokenAccount = await getAssociatedTokenAccountAddress(usdcMint, address(selectedWalletAccount.address));
-    const dvoteTokenAccount = await getAssociatedTokenAccountAddress(dvoteMint, address(selectedWalletAccount.address));
+    const usdcTokenAccount = await getAssociatedTokenAccountAddress(usdcMint, address(walletAccount.address));
+    const dvoteTokenAccount = await getAssociatedTokenAccountAddress(dvoteMint, address(walletAccount.address));
 
     // Run balance checks in parallel
     const [usdcResult, dvoteResult] = await Promise.allSettled([
@@ -148,11 +165,11 @@ export function useSolanaVoting() {
       }
     ];
   }
-  }, [selectedWalletAccount]);
+  }, [walletAccount]);
 
   // Create a vote on-chain
   const createVoteTransaction = useCallback(async (params: CreateVoteParams): Promise<VoteTransactionResult> => {
-    if (!selectedWalletAccount?.address || !transactionSendingSigner) {
+    if (!walletAccount?.address || !transactionSendingSigner) {
       return {
         success: false,
         error: 'Wallet not connected or not ready'
@@ -218,10 +235,10 @@ export function useSolanaVoting() {
         // Get position PDA
         const [positionPda] = await getProgramDerivedAddress({
           programAddress: PROGRAM_ID,
-          seeds: ["position", enc.encode(vote.address), enc.encode(address(selectedWalletAccount.address))]
+          seeds: ["position", enc.encode(vote.address), enc.encode(address(walletAccount.address))]
         });
 
-        const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(selectedWalletAccount.address));
+        const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(walletAccount.address));
 
         // Convert amount to proper units (assuming 6 decimals for USDC)
         const scaledAmount = BigInt(Math.floor(params.initialVote.amount * 1_000_000));
@@ -292,11 +309,11 @@ export function useSolanaVoting() {
         error: error instanceof Error ? error.message : 'Unknown transaction error'
       };
     }
-  }, [selectedWalletAccount, transactionSendingSigner, rpc]);
+  }, [walletAccount, transactionSendingSigner, rpc]);
 
   // Initialize position (cast a vote) on an existing vote
   const initializePosition = useCallback(async (params: InitializePositionParams): Promise<VoteTransactionResult> => {
-    if (!selectedWalletAccount?.address || !transactionSendingSigner) {
+    if (!walletAccount?.address || !transactionSendingSigner) {
       return {
         success: false,
         error: 'Wallet not connected or not ready'
@@ -326,7 +343,7 @@ export function useSolanaVoting() {
       // Get position PDA
       const [positionPda] = await getProgramDerivedAddress({
         programAddress: PROGRAM_ID,
-        seeds: ["position", enc.encode(voteAddress), enc.encode(address(selectedWalletAccount.address))]
+        seeds: ["position", enc.encode(voteAddress), enc.encode(address(walletAccount.address))]
       });
 
       // Default to USDC if no token specified
@@ -334,7 +351,7 @@ export function useSolanaVoting() {
 
       const voteVaultTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, voteVaultPda);
       const vaultTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, vaultPda);
-      const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(selectedWalletAccount.address));
+      const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(walletAccount.address));
 
       // Convert amount to proper units (assuming 6 decimals for USDC)
       const scaledAmount = BigInt(Math.floor(params.amount * 1_000_000));
@@ -388,7 +405,7 @@ export function useSolanaVoting() {
         error: error instanceof Error ? error.message : 'Unknown vote error'
       };
     }
-  }, [selectedWalletAccount, rpc, transactionSendingSigner]);
+  }, [walletAccount, rpc, transactionSendingSigner]);
 
   // Cast a vote (wrapper for backward compatibility)
   const castVote = useCallback(async (
@@ -405,7 +422,7 @@ export function useSolanaVoting() {
 
   // Update position (add more tokens to existing position)
   const updatePosition = useCallback(async (params: UpdatePositionParams): Promise<VoteTransactionResult> => {
-    if (!selectedWalletAccount?.address || !transactionSendingSigner) {
+    if (!walletAccount?.address || !transactionSendingSigner) {
       return {
         success: false,
         error: 'Wallet not connected or not ready'
@@ -436,7 +453,7 @@ export function useSolanaVoting() {
       // Get position PDA
       const [positionPda] = await getProgramDerivedAddress({
         programAddress: PROGRAM_ID,
-        seeds: ["position", enc.encode(voteAddress), enc.encode(address(selectedWalletAccount.address))]
+        seeds: ["position", enc.encode(voteAddress), enc.encode(address(walletAccount.address))]
       });
 
       // Default to USDC if no token specified
@@ -444,7 +461,7 @@ export function useSolanaVoting() {
 
       const voteVaultTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, voteVaultPda);
       const vaultTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, vaultPda);
-      const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(selectedWalletAccount.address));
+      const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(walletAccount.address));
 
       // Convert amount to proper units (assuming 6 decimals for USDC)
       const scaledAmount = BigInt(Math.floor(params.amount * 1_000_000));
@@ -493,11 +510,11 @@ export function useSolanaVoting() {
         error: error instanceof Error ? error.message : 'Unknown update error'
       };
     }
-  }, [selectedWalletAccount, rpc, transactionSendingSigner]);
+  }, [walletAccount, rpc, transactionSendingSigner]);
 
   // Redeem winnings from a completed vote
   const redeemWinnings = useCallback(async (params: RedeemWinningsParams): Promise<VoteTransactionResult> => {
-    if (!selectedWalletAccount?.address || !transactionSendingSigner) {
+    if (!walletAccount?.address || !transactionSendingSigner) {
       return {
         success: false,
         error: 'Wallet not connected or not ready'
@@ -527,7 +544,7 @@ export function useSolanaVoting() {
       // Get position PDA
       const [positionPda] = await getProgramDerivedAddress({
         programAddress: PROGRAM_ID,
-        seeds: ["position", enc.encode(voteAddress), enc.encode(address(selectedWalletAccount.address))]
+        seeds: ["position", enc.encode(voteAddress), enc.encode(address(walletAccount.address))]
       });
 
       // Default to USDC if no token specified
@@ -535,7 +552,7 @@ export function useSolanaVoting() {
 
       const voteVaultTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, voteVaultPda);
       const vaultTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, vaultPda);
-      const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(selectedWalletAccount.address));
+      const authorityTokenAccount = await getAssociatedTokenAccountAddress(tokenMint, address(walletAccount.address));
 
       console.log('Redeeming winnings from account', voteVaultTokenAccount);
       // Create redeem winnings instruction
@@ -576,7 +593,7 @@ export function useSolanaVoting() {
         error: error instanceof Error ? error.message : 'Unknown redeem error'
       };
     }
-  }, [selectedWalletAccount, rpc, transactionSendingSigner]);
+  }, [walletAccount, rpc, transactionSendingSigner]);
 
   // Get vote account state
   const getVoteState = useCallback(async (votePubkey: string) => {
@@ -599,7 +616,7 @@ export function useSolanaVoting() {
 
       return {
         title: `Vote ${votePubkey.slice(0, 8)}`, // Title would be stored off-chain
-        creator: selectedWalletAccount?.address, // Creator not stored on-chain in this structure
+        creator: walletAccount?.address, // Creator not stored on-chain in this structure
         endTime: new Date(endTimestamp * 1000),
         yesVotes: trueVotes,
         noVotes: falseVotes,
@@ -613,7 +630,7 @@ export function useSolanaVoting() {
       // Return mock data as fallback
       return {
         title: 'Sample Vote',
-        creator: selectedWalletAccount?.address,
+        creator: walletAccount?.address,
         endTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
         yesVotes: 125,
         noVotes: 78,
@@ -621,12 +638,12 @@ export function useSolanaVoting() {
         isActive: true
       };
     }
-  }, [selectedWalletAccount, rpc]);
+  }, [walletAccount, rpc]);
 
   return {
     // Wallet state
-    isConnected: !!selectedWalletAccount?.address,
-    walletAddress: selectedWalletAccount?.address,
+    isConnected: !!walletAccount?.address,
+    walletAddress: walletAccount?.address,
 
     // Functions
     getWalletTokens,
