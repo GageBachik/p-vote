@@ -4,7 +4,7 @@ import { useContext, useCallback, useMemo, useState, useEffect, useRef } from 'r
 import { SelectedWalletAccountContext } from '@/app/context/SelectedWalletAccountContext';
 import { RpcContext } from '@/app/context/RpcContext';
 import { ChainContext } from '@/app/context/ChainContext';
-import { useWalletAccountTransactionSendingSigner, type UiWalletAccount } from '@solana/react';
+import { useWalletAccountTransactionSendingSigner } from '@solana/react';
 import {
   address,
   type Blockhash,
