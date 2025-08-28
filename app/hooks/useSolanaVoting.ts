@@ -32,6 +32,7 @@ import {
 } from "gill/programs/token";
 import * as programClient from "../../clients/js/src/generated/";
 import bs58 from 'bs58';
+import { UiWalletAccount } from '@wallet-standard/react';
 
 // Program ID for the voting program
 const PROGRAM_ID = address('pVoTew8KNhq6rsrYq9jEUzKypytaLtQR62UbagWTCvu');
